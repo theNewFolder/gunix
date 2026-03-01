@@ -106,8 +106,7 @@
     graphics = {
       enable = true;
       extraPackages = with pkgs; [
-        amdvlk
-        mesa
+        mesa  # RADV is enabled by default, no need for amdvlk
       ];
     };
     cpu.amd.updateMicrocode = true;
