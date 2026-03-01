@@ -59,6 +59,8 @@
              (gnu packages crypto)
              (gnu packages fonts)
              (gnu packages terminals)
+             (gnu packages xorg)              ;; For xhost and X11 utilities
+             (gnu packages wm)                ;; Window manager utilities
              (gnu services)
              (guix gexp)
              ;; dwl-guile Wayland compositor home service
@@ -189,6 +191,15 @@
    emacs-eshell-prompt-extras ; Fancy eshell prompts
 
    ;; =========================================================================
+   ;; EXWM - Emacs X Window Manager
+   ;; =========================================================================
+   ;; EXWM runs inside Emacs and manages X11 windows as Emacs buffers.
+   ;; When used with dwl-guile (Wayland), EXWM runs via XWayland within
+   ;; an Emacs frame, providing a nested WM experience.
+   emacs-exwm                ; Emacs X Window Manager
+   emacs-xelb                ; X protocol Emacs Lisp Binding (required by EXWM)
+
+   ;; =========================================================================
    ;; Themes (System Crafters favorites)
    ;; =========================================================================
    emacs-doom-themes         ; Collection of themes from Doom Emacs
@@ -303,127 +314,207 @@
 ;;; dwl-guile Configuration (Wayland Compositor)
 ;;; --------------------------------------------
 ;;; dwl-guile is a Guile-configurable Wayland compositor based on dwl (dwm for Wayland).
-;;; This configuration provides keybindings, rules, and appearance settings.
+;;; This configuration provides keybindings, rules, and appearance settings with
+;;; full Emacs integration. dwl-guile acts as the outer compositor, while EXWM
+;;; can run inside Emacs to manage X11 windows via XWayland.
+;;;
+;;; Architecture:
+;;;   dwl-guile (Wayland compositor)
+;;;     -> Emacs (pgtk, native Wayland client)
+;;;        -> EXWM (manages XWayland windows inside Emacs)
+;;;
 ;;; For more info: https://github.com/engstrand-config/dwl-guile
 
 (define %dwl-guile-config
   '(;; =========================================================================
     ;; General Settings
     ;; =========================================================================
-    ;; Do not use default keybindings (we define our own below)
+    ;; Do not use default keybindings (we define our own Emacs-style bindings)
     ;; (setq inhibit-defaults? #t)
 
     ;; Border width in pixels
     (setq border-px 2)
 
-    ;; Gap between windows (if supported by layout)
-    (setq gaps-inner 5)
-    (setq gaps-outer 5)
+    ;; Gap between windows (comfortable spacing for Emacs frames)
+    (setq gaps-inner 6)
+    (setq gaps-outer 6)
 
-    ;; Focus follows mouse
+    ;; Focus follows mouse (Emacs-friendly - point follows mouse can be enabled in Emacs)
     (setq focus-follows-mouse? #t)
 
     ;; =========================================================================
     ;; Colors (RGBA format: 0.0-1.0 for each channel)
     ;; =========================================================================
+    ;; Modus Vivendi color scheme for consistency with Emacs theme
     ;; Border color for focused windows (Modus Vivendi cyan accent)
-    (setq border-color-focus '(0.0 0.74 0.82 1.0))    ; #00bcd4
+    (setq border-color-focus '(0.0 0.74 0.82 1.0))    ; #00bcd4 cyan
 
-    ;; Border color for unfocused windows (subtle gray)
-    (setq border-color-unfocus '(0.3 0.3 0.3 1.0))    ; #4d4d4d
+    ;; Border color for unfocused windows (subtle gray from Modus Vivendi)
+    (setq border-color-unfocus '(0.25 0.25 0.28 1.0)) ; #404045
 
-    ;; Background color
-    (setq root-color '(0.1 0.1 0.1 1.0))              ; #1a1a1a
+    ;; Background color (Modus Vivendi background)
+    (setq root-color '(0.0 0.0 0.0 1.0))              ; #000000
 
     ;; =========================================================================
-    ;; Tags (Workspaces)
+    ;; Tags (Workspaces) - Emacs-style naming
     ;; =========================================================================
-    ;; Define 9 tags/workspaces
-    (setq tags '("1" "2" "3" "4" "5" "6" "7" "8" "9"))
+    ;; Define 9 tags/workspaces with meaningful names
+    ;; These can be accessed via SUPER+1-9 or from Emacs via dwl-guile IPC
+    (setq tags '("1:emacs" "2:web" "3:term" "4:code" "5:docs" "6:media" "7:chat" "8:misc" "9:sys"))
 
     ;; =========================================================================
     ;; Window Rules
     ;; =========================================================================
     ;; Rules for specific applications
-    ;; Format: (dwl-rule #:id "app-id" #:title "title" #:tags <tag-mask> #:floating? <bool>)
+    ;; Emacs gets priority placement; EXWM-managed windows float by default
     (set-rules
+     ;; Emacs always starts on tag 1 (main workspace)
+     (dwl-rule #:id "emacs" #:tags #b000000001)
+     (dwl-rule #:id "Emacs" #:tags #b000000001)
+
      ;; Float dialog windows
      (dwl-rule #:title "Open File" #:floating? #t)
      (dwl-rule #:title "Save File" #:floating? #t)
+     (dwl-rule #:title "Save As" #:floating? #t)
      (dwl-rule #:title "Preferences" #:floating? #t)
+     (dwl-rule #:title "Properties" #:floating? #t)
+     (dwl-rule #:title "About" #:floating? #t)
 
-     ;; Assign specific apps to tags
-     ;; (dwl-rule #:id "firefox" #:tags #b000000010)    ; Tag 2
-     ;; (dwl-rule #:id "emacs" #:tags #b000000001)      ; Tag 1
-     )
+     ;; Float Emacs minibuffer frames and popups
+     (dwl-rule #:title "*Completions*" #:floating? #t)
+     (dwl-rule #:title " *which-key*" #:floating? #t)
+
+     ;; Web browsers on tag 2
+     (dwl-rule #:id "firefox" #:tags #b000000010)
+     (dwl-rule #:id "chromium" #:tags #b000000010)
+     (dwl-rule #:id "qutebrowser" #:tags #b000000010)
+
+     ;; Terminals on tag 3
+     (dwl-rule #:id "foot" #:tags #b000000100)
+     (dwl-rule #:id "Alacritty" #:tags #b000000100)
+     (dwl-rule #:id "kitty" #:tags #b000000100))
 
     ;; =========================================================================
-    ;; Keybindings
+    ;; Keybindings - Emacs-Integrated Design
     ;; =========================================================================
-    ;; Modifier key: SUPER (Windows/Command key)
-    ;; Available modifiers: SUPER, ALT, CTRL, SHIFT
+    ;; Modifier key: SUPER (s- in Emacs notation)
+    ;; Design principle: SUPER for compositor, C- and M- reserved for Emacs
+    ;; All bindings are also exposed to Emacs via dwl-guile IPC for seamless control
 
-    ;; Application launchers
+    ;; -------------------------------------------------------------------------
+    ;; SUPER+e: Emacs (Primary Application)
+    ;; -------------------------------------------------------------------------
+    ;; SUPER+e opens emacsclient (connects to running Emacs daemon)
+    (set-keys SUPER "e"
+              (lambda () (dwl:spawn "emacsclient" "-c" "-a" "emacs")))
+
+    ;; SUPER+SHIFT+e starts a fresh Emacs instance
+    (set-keys SUPER SHIFT "e"
+              (lambda () (dwl:spawn "emacs")))
+
+    ;; SUPER+CTRL+e restarts Emacs daemon
+    (set-keys SUPER CTRL "e"
+              (lambda ()
+                (dwl:spawn "emacsclient" "-e" "(kill-emacs)")
+                (dwl:spawn "emacs" "--daemon")))
+
+    ;; -------------------------------------------------------------------------
+    ;; Application Launchers
+    ;; -------------------------------------------------------------------------
     (set-keys SUPER "Return"
-              (lambda () (dwl:spawn "foot")))                    ; Terminal
+              (lambda () (dwl:spawn "foot")))                    ; Terminal (foot)
+
+    (set-keys SUPER SHIFT "Return"
+              (lambda () (dwl:spawn "emacsclient" "-c" "-e" "(vterm)"))) ; Emacs terminal
 
     (set-keys SUPER "d"
               (lambda () (dwl:spawn "wofi" "--show" "drun")))    ; App launcher
 
-    (set-keys SUPER "e"
-              (lambda () (dwl:spawn "emacsclient" "-c")))        ; Emacs
+    (set-keys SUPER "p"
+              (lambda () (dwl:spawn "wofi" "--show" "run")))     ; Command runner
 
-    (set-keys SUPER SHIFT "e"
-              (lambda () (dwl:spawn "emacs")))                   ; New Emacs instance
+    ;; Emacs-style M-x equivalent for system commands
+    (set-keys SUPER "x"
+              (lambda () (dwl:spawn "emacsclient" "-c" "-e" "(call-interactively 'execute-extended-command)")))
 
-    ;; Window management
+    ;; -------------------------------------------------------------------------
+    ;; Window Management - Emacs-style Keybindings
+    ;; -------------------------------------------------------------------------
+    ;; SUPER+q: Close window (like Emacs C-x 0)
     (set-keys SUPER "q"
-              (lambda () (dwl:kill-client)))                     ; Close window
+              (lambda () (dwl:kill-client)))
 
+    ;; SUPER+o: Other window (cycle focus, like Emacs C-x o)
+    (set-keys SUPER "o"
+              (lambda () (dwl:focus-stack 1)))
+
+    ;; SUPER+SHIFT+o: Reverse cycle
+    (set-keys SUPER SHIFT "o"
+              (lambda () (dwl:focus-stack -1)))
+
+    ;; SUPER+j/k: Vim-style navigation (also works)
     (set-keys SUPER "j"
-              (lambda () (dwl:focus-stack 1)))                   ; Focus next
+              (lambda () (dwl:focus-stack 1)))
 
     (set-keys SUPER "k"
-              (lambda () (dwl:focus-stack -1)))                  ; Focus previous
+              (lambda () (dwl:focus-stack -1)))
 
+    ;; SUPER+h/l: Resize master area
     (set-keys SUPER "h"
-              (lambda () (dwl:change-master-factor -0.05)))      ; Shrink master
+              (lambda () (dwl:change-master-factor -0.05)))
 
     (set-keys SUPER "l"
-              (lambda () (dwl:change-master-factor 0.05)))       ; Grow master
+              (lambda () (dwl:change-master-factor 0.05)))
 
-    (set-keys SUPER SHIFT "Return"
-              (lambda () (dwl:zoom)))                            ; Swap with master
+    ;; SUPER+CTRL+Return: Swap with master (zoom)
+    (set-keys SUPER CTRL "Return"
+              (lambda () (dwl:zoom)))
 
+    ;; SUPER+Tab: Previous tag (like Emacs previous-buffer)
     (set-keys SUPER "Tab"
-              (lambda () (dwl:view-previous)))                   ; Previous tag
+              (lambda () (dwl:view-previous)))
 
-    ;; Layout control
+    ;; -------------------------------------------------------------------------
+    ;; Layout Control
+    ;; -------------------------------------------------------------------------
+    ;; SUPER+t: Tiled layout
     (set-keys SUPER "t"
-              (lambda () (dwl:set-layout "tile")))               ; Tiled layout
+              (lambda () (dwl:set-layout "tile")))
 
+    ;; SUPER+f: Toggle fullscreen (like Emacs toggle-frame-fullscreen)
     (set-keys SUPER "f"
-              (lambda () (dwl:toggle-fullscreen)))               ; Fullscreen
+              (lambda () (dwl:toggle-fullscreen)))
 
-    (set-keys SUPER SHIFT "space"
-              (lambda () (dwl:toggle-floating)))                 ; Float/tile
+    ;; SUPER+SHIFT+f: Toggle floating
+    (set-keys SUPER SHIFT "f"
+              (lambda () (dwl:toggle-floating)))
 
+    ;; SUPER+m: Monocle layout (one window fills screen)
     (set-keys SUPER "m"
-              (lambda () (dwl:set-layout "monocle")))            ; Monocle layout
+              (lambda () (dwl:set-layout "monocle")))
 
-    ;; Tag/workspace switching (SUPER + 1-9)
-    (set-keys SUPER "1" (lambda () (dwl:view #b000000001)))
-    (set-keys SUPER "2" (lambda () (dwl:view #b000000010)))
-    (set-keys SUPER "3" (lambda () (dwl:view #b000000100)))
-    (set-keys SUPER "4" (lambda () (dwl:view #b000001000)))
-    (set-keys SUPER "5" (lambda () (dwl:view #b000010000)))
-    (set-keys SUPER "6" (lambda () (dwl:view #b000100000)))
-    (set-keys SUPER "7" (lambda () (dwl:view #b001000000)))
-    (set-keys SUPER "8" (lambda () (dwl:view #b010000000)))
-    (set-keys SUPER "9" (lambda () (dwl:view #b100000000)))
-    (set-keys SUPER "0" (lambda () (dwl:view-all)))              ; View all tags
+    ;; SUPER+space: Toggle between layouts
+    (set-keys SUPER "space"
+              (lambda () (dwl:cycle-layout)))
 
-    ;; Move window to tag (SUPER + SHIFT + 1-9)
+    ;; -------------------------------------------------------------------------
+    ;; Tag/Workspace Switching (SUPER + 1-9)
+    ;; -------------------------------------------------------------------------
+    ;; These workspaces are also accessible from Emacs via dwl-guile integration
+    (set-keys SUPER "1" (lambda () (dwl:view #b000000001)))  ; emacs
+    (set-keys SUPER "2" (lambda () (dwl:view #b000000010)))  ; web
+    (set-keys SUPER "3" (lambda () (dwl:view #b000000100)))  ; term
+    (set-keys SUPER "4" (lambda () (dwl:view #b000001000)))  ; code
+    (set-keys SUPER "5" (lambda () (dwl:view #b000010000)))  ; docs
+    (set-keys SUPER "6" (lambda () (dwl:view #b000100000)))  ; media
+    (set-keys SUPER "7" (lambda () (dwl:view #b001000000)))  ; chat
+    (set-keys SUPER "8" (lambda () (dwl:view #b010000000)))  ; misc
+    (set-keys SUPER "9" (lambda () (dwl:view #b100000000)))  ; sys
+    (set-keys SUPER "0" (lambda () (dwl:view-all)))          ; View all tags
+
+    ;; -------------------------------------------------------------------------
+    ;; Move Window to Tag (SUPER + SHIFT + 1-9)
+    ;; -------------------------------------------------------------------------
     (set-keys SUPER SHIFT "1" (lambda () (dwl:tag #b000000001)))
     (set-keys SUPER SHIFT "2" (lambda () (dwl:tag #b000000010)))
     (set-keys SUPER SHIFT "3" (lambda () (dwl:tag #b000000100)))
@@ -434,37 +525,83 @@
     (set-keys SUPER SHIFT "8" (lambda () (dwl:tag #b010000000)))
     (set-keys SUPER SHIFT "9" (lambda () (dwl:tag #b100000000)))
 
-    ;; Monitor control (multi-monitor support)
+    ;; -------------------------------------------------------------------------
+    ;; Multi-Monitor Control
+    ;; -------------------------------------------------------------------------
+    ;; SUPER+,/. : Focus previous/next monitor
     (set-keys SUPER "comma"
-              (lambda () (dwl:focus-monitor -1)))                ; Previous monitor
+              (lambda () (dwl:focus-monitor -1)))
 
     (set-keys SUPER "period"
-              (lambda () (dwl:focus-monitor 1)))                 ; Next monitor
+              (lambda () (dwl:focus-monitor 1)))
 
+    ;; SUPER+SHIFT+,/. : Move window to previous/next monitor
     (set-keys SUPER SHIFT "comma"
-              (lambda () (dwl:tag-monitor -1)))                  ; Move to prev monitor
+              (lambda () (dwl:tag-monitor -1)))
 
     (set-keys SUPER SHIFT "period"
-              (lambda () (dwl:tag-monitor 1)))                   ; Move to next monitor
+              (lambda () (dwl:tag-monitor 1)))
 
-    ;; Session control
+    ;; -------------------------------------------------------------------------
+    ;; Session Control
+    ;; -------------------------------------------------------------------------
+    ;; SUPER+SHIFT+q: Quit dwl-guile
     (set-keys SUPER SHIFT "q"
-              (lambda () (dwl:quit)))                            ; Quit dwl-guile
+              (lambda () (dwl:quit)))
 
+    ;; SUPER+SHIFT+r: Reload configuration
     (set-keys SUPER SHIFT "r"
-              (lambda () (dwl:reload-config)))                   ; Reload config
+              (lambda () (dwl:reload-config)))
+
+    ;; SUPER+CTRL+l: Lock screen (requires swaylock or similar)
+    (set-keys SUPER CTRL "l"
+              (lambda () (dwl:spawn "swaylock" "-f" "-c" "000000")))
+
+    ;; -------------------------------------------------------------------------
+    ;; Emacs Integration Bindings
+    ;; -------------------------------------------------------------------------
+    ;; These bindings launch specific Emacs functionality
+
+    ;; SUPER+b: Switch buffer (via Emacs consult-buffer)
+    (set-keys SUPER "b"
+              (lambda () (dwl:spawn "emacsclient" "-c" "-e" "(call-interactively 'consult-buffer)")))
+
+    ;; SUPER+g: Magit status
+    (set-keys SUPER "g"
+              (lambda () (dwl:spawn "emacsclient" "-c" "-e" "(magit-status)")))
+
+    ;; SUPER+n: Org-roam find node
+    (set-keys SUPER "n"
+              (lambda () (dwl:spawn "emacsclient" "-c" "-e" "(org-roam-node-find)")))
+
+    ;; SUPER+a: Org agenda
+    (set-keys SUPER "a"
+              (lambda () (dwl:spawn "emacsclient" "-c" "-e" "(org-agenda)")))
+
+    ;; SUPER+s: Consult ripgrep (search)
+    (set-keys SUPER "s"
+              (lambda () (dwl:spawn "emacsclient" "-c" "-e" "(consult-ripgrep)")))
 
     ;; =========================================================================
-    ;; Startup Hook
+    ;; Startup Hook - Initialize Emacs-centric Environment
     ;; =========================================================================
-    ;; Commands to run when dwl-guile starts
     (add-hook! dwl:startup-hook
                (lambda ()
                  ;; Start status bar
                  (dwl:spawn "waybar")
+
                  ;; Start notification daemon
                  (dwl:spawn "mako")
-                 ;; Set wallpaper (if swaybg is available)
+
+                 ;; Start Emacs daemon if not running
+                 (dwl:spawn "emacsclient" "-e" "(message \"Emacs ready\")"
+                            "||" "emacs" "--daemon")
+
+                 ;; Open main Emacs frame after a short delay (allow daemon to start)
+                 ;; This frame will host EXWM for managing XWayland windows
+                 (dwl:spawn "sleep" "1" "&&" "emacsclient" "-c")
+
+                 ;; Optional: Set wallpaper
                  ;; (dwl:spawn "swaybg" "-i" "/path/to/wallpaper.jpg" "-m" "fill")
                  ))))
 
@@ -1229,6 +1366,213 @@ export PATH=\"$HOME/.guix-profile/bin:$HOME/.local/bin:$PATH\"
   (require 'server)
   (unless (server-running-p)
     (server-start)))
+
+;; =============================================================================
+;; EXWM - Emacs X Window Manager Configuration
+;; =============================================================================
+;; EXWM runs inside Emacs and manages X11 windows as Emacs buffers.
+;; When used with dwl-guile (Wayland), EXWM manages XWayland windows
+;; within the Emacs frame, creating a nested window manager setup.
+;;
+;; Architecture:
+;;   dwl-guile (outer compositor) -> Emacs (pgtk) -> EXWM (inner WM)
+;;
+;; EXWM keybindings use s- (Super) prefix to avoid conflicts with
+;; dwl-guile which also uses Super. EXWM bindings only apply when
+;; an EXWM buffer has focus.
+
+(when (require 'exwm nil t)
+  ;; ---------------------------------------------------------------------------
+  ;; Workspace Configuration
+  ;; ---------------------------------------------------------------------------
+  ;; Number of EXWM workspaces (inside Emacs, separate from dwl-guile tags)
+  (setq exwm-workspace-number 4)
+
+  ;; Show workspace indicator in modeline
+  (setq exwm-workspace-show-all-buffers t)
+  (setq exwm-layout-show-all-buffers t)
+
+  ;; Workspace names
+  (setq exwm-workspace-index-map
+        (lambda (index)
+          (let ((named-workspaces [\"main\" \"web\" \"term\" \"misc\"]))
+            (if (< index (length named-workspaces))
+                (elt named-workspaces index)
+              (number-to-string index)))))
+
+  ;; ---------------------------------------------------------------------------
+  ;; Buffer Naming
+  ;; ---------------------------------------------------------------------------
+  ;; Use class name + title for buffer names
+  (defun my/exwm-update-class ()
+    (exwm-workspace-rename-buffer exwm-class-name))
+
+  (defun my/exwm-update-title ()
+    (pcase exwm-class-name
+      (\"firefox\" (exwm-workspace-rename-buffer (format \"Firefox: %s\" exwm-title)))
+      (\"chromium-browser\" (exwm-workspace-rename-buffer (format \"Chromium: %s\" exwm-title)))
+      (_ (exwm-workspace-rename-buffer (format \"%s: %s\" exwm-class-name exwm-title)))))
+
+  (add-hook 'exwm-update-class-hook #'my/exwm-update-class)
+  (add-hook 'exwm-update-title-hook #'my/exwm-update-title)
+
+  ;; ---------------------------------------------------------------------------
+  ;; EXWM Keybindings
+  ;; ---------------------------------------------------------------------------
+  ;; These bindings work when EXWM buffers have focus
+
+  ;; Global keys (always available, even in X windows)
+  (setq exwm-input-global-keys
+        `(;; Workspace switching with s-1 through s-4
+          ([?\\s-1] . (lambda () (interactive) (exwm-workspace-switch 0)))
+          ([?\\s-2] . (lambda () (interactive) (exwm-workspace-switch 1)))
+          ([?\\s-3] . (lambda () (interactive) (exwm-workspace-switch 2)))
+          ([?\\s-4] . (lambda () (interactive) (exwm-workspace-switch 3)))
+
+          ;; s-r: Reset/rename
+          ([?\\s-r] . exwm-reset)
+
+          ;; s-w: Switch workspace interactively
+          ([?\\s-w] . exwm-workspace-switch)
+
+          ;; s-&: Launch application
+          ([?\\s-&] . (lambda (command)
+                        (interactive (list (read-shell-command \"$ \")))
+                        (start-process-shell-command command nil command)))
+
+          ;; s-b: Switch buffer
+          ([?\\s-b] . consult-buffer)
+
+          ;; s-d: Toggle between line-mode and char-mode
+          ([?\\s-d] . exwm-input-toggle-keyboard)))
+
+  ;; Prefix keys that should be sent to Emacs (not X windows)
+  (setq exwm-input-prefix-keys
+        '(?\\C-x
+          ?\\C-u
+          ?\\C-h
+          ?\\C-g
+          ?\\M-x
+          ?\\M-`
+          ?\\M-&
+          ?\\M-:
+          ?\\C-\\M-j))
+
+  ;; ---------------------------------------------------------------------------
+  ;; Simulation Keys
+  ;; ---------------------------------------------------------------------------
+  ;; Make X applications behave more like Emacs
+  (setq exwm-input-simulation-keys
+        '(;; Movement
+          ([?\\C-b] . [left])
+          ([?\\C-f] . [right])
+          ([?\\C-p] . [up])
+          ([?\\C-n] . [down])
+          ([?\\C-a] . [home])
+          ([?\\C-e] . [end])
+          ([?\\M-v] . [prior])
+          ([?\\C-v] . [next])
+          ([?\\C-d] . [delete])
+          ([?\\C-k] . [S-end delete])
+          ;; Cut/copy/paste
+          ([?\\C-w] . [?\\C-x])
+          ([?\\M-w] . [?\\C-c])
+          ([?\\C-y] . [?\\C-v])
+          ;; Search
+          ([?\\C-s] . [?\\C-f])
+          ;; Undo/Redo
+          ([?\\C-/] . [?\\C-z])
+          ([?\\C-?] . [?\\C-y])
+          ;; Save
+          ([?\\C-x ?\\C-s] . [?\\C-s])))
+
+  ;; ---------------------------------------------------------------------------
+  ;; Multi-Monitor Support
+  ;; ---------------------------------------------------------------------------
+  (require 'exwm-randr nil t)
+  (when (featurep 'exwm-randr)
+    (setq exwm-randr-workspace-monitor-plist
+          '(0 \"eDP-1\" 1 \"HDMI-1\" 2 \"eDP-1\" 3 \"HDMI-1\"))
+
+    (defun my/exwm-randr-screen-change ()
+      (start-process-shell-command
+       \"xrandr\" nil \"xrandr --output eDP-1 --auto --output HDMI-1 --auto --right-of eDP-1\"))
+
+    (add-hook 'exwm-randr-screen-change-hook #'my/exwm-randr-screen-change)
+    (exwm-randr-enable))
+
+  ;; ---------------------------------------------------------------------------
+  ;; System Tray
+  ;; ---------------------------------------------------------------------------
+  (require 'exwm-systemtray nil t)
+  (when (featurep 'exwm-systemtray)
+    (setq exwm-systemtray-height 22)
+    (exwm-systemtray-enable))
+
+  ;; ---------------------------------------------------------------------------
+  ;; EXWM + dwl-guile Integration Hooks
+  ;; ---------------------------------------------------------------------------
+  (defun my/exwm-init-hook ()
+    (message \"EXWM initialized inside dwl-guile\")
+    (setq exwm-manage-force-tiling t))
+
+  (add-hook 'exwm-init-hook #'my/exwm-init-hook)
+
+  (defun my/exwm-manage-hook ()
+    (when (member exwm-class-name '(\"mpv\" \"feh\" \"Sxiv\"))
+      (exwm-floating-toggle-floating)))
+
+  (add-hook 'exwm-manage-finish-hook #'my/exwm-manage-hook)
+
+  ;; ---------------------------------------------------------------------------
+  ;; Enable EXWM (only under X/XWayland)
+  ;; ---------------------------------------------------------------------------
+  (when (and (getenv \"DISPLAY\")
+             (not (string-empty-p (getenv \"DISPLAY\"))))
+    (exwm-enable)))
+
+;; =============================================================================
+;; dwl-guile Integration Functions
+;; =============================================================================
+;; Functions for interacting with dwl-guile from within Emacs
+
+(defun dwl-guile-eval (expr)
+  \"Evaluate a Guile expression in dwl-guile.\"
+  (interactive \"sGuile expression: \")
+  (shell-command (format \"dwl-guile -e '%s'\" expr)))
+
+(defun dwl-guile-view-tag (tag)
+  \"Switch to a dwl-guile tag (1-9).\"
+  (interactive \"nTag (1-9): \")
+  (dwl-guile-eval (format \"(dwl:view #b%09b)\" (ash 1 (1- tag)))))
+
+(defun dwl-guile-move-to-tag (tag)
+  \"Move current window to a dwl-guile tag (1-9).\"
+  (interactive \"nTag (1-9): \")
+  (dwl-guile-eval (format \"(dwl:tag #b%09b)\" (ash 1 (1- tag)))))
+
+(defun dwl-guile-toggle-fullscreen ()
+  \"Toggle fullscreen in dwl-guile.\"
+  (interactive)
+  (dwl-guile-eval \"(dwl:toggle-fullscreen)\"))
+
+(defun dwl-guile-reload-config ()
+  \"Reload dwl-guile configuration.\"
+  (interactive)
+  (dwl-guile-eval \"(dwl:reload-config)\"))
+
+;; Keybindings for dwl-guile control from Emacs (use C-c d prefix)
+(global-set-key (kbd \"C-c d 1\") (lambda () (interactive) (dwl-guile-view-tag 1)))
+(global-set-key (kbd \"C-c d 2\") (lambda () (interactive) (dwl-guile-view-tag 2)))
+(global-set-key (kbd \"C-c d 3\") (lambda () (interactive) (dwl-guile-view-tag 3)))
+(global-set-key (kbd \"C-c d 4\") (lambda () (interactive) (dwl-guile-view-tag 4)))
+(global-set-key (kbd \"C-c d 5\") (lambda () (interactive) (dwl-guile-view-tag 5)))
+(global-set-key (kbd \"C-c d 6\") (lambda () (interactive) (dwl-guile-view-tag 6)))
+(global-set-key (kbd \"C-c d 7\") (lambda () (interactive) (dwl-guile-view-tag 7)))
+(global-set-key (kbd \"C-c d 8\") (lambda () (interactive) (dwl-guile-view-tag 8)))
+(global-set-key (kbd \"C-c d 9\") (lambda () (interactive) (dwl-guile-view-tag 9)))
+(global-set-key (kbd \"C-c d f\") #'dwl-guile-toggle-fullscreen)
+(global-set-key (kbd \"C-c d r\") #'dwl-guile-reload-config)
 ")
 
 ;;; Shepherd User Services
@@ -1304,13 +1648,31 @@ export PATH=\"$HOME/.guix-profile/bin:$HOME/.local/bin:$PATH\"
    ;;   herd restart dwl-guile
    ;;
    ;; Logs: $XDG_LOG_HOME/dwl-guile.log or ~/dwl-guile.log
+   ;; =========================================================================
+   ;; dwl-guile + EXWM Integration
+   ;; =========================================================================
+   ;; This configuration sets up dwl-guile as the outer Wayland compositor
+   ;; with XWayland support enabled. EXWM runs inside Emacs to manage
+   ;; X11 applications that run under XWayland.
+   ;;
+   ;; Architecture:
+   ;;   dwl-guile (Wayland) <-- manages native Wayland windows
+   ;;     |
+   ;;     +-> Emacs (pgtk)  <-- runs as native Wayland client
+   ;;     |     |
+   ;;     |     +-> EXWM    <-- manages XWayland windows inside Emacs buffers
+   ;;     |
+   ;;     +-> XWayland      <-- provides X11 compatibility layer
+   ;;           |
+   ;;           +-> X11 apps (run inside EXWM-managed Emacs buffers)
+   ;;
    (service home-dwl-guile-service-type
             (home-dwl-guile-configuration
-             ;; Use dwl-guile with XWayland support for X11 application compatibility
-             ;; Uncomment to enable XWayland:
-             ;; (package
-             ;;  (patch-dwl-guile-package dwl-guile
-             ;;                           #:patches (list %patch-xwayland)))
+             ;; Enable XWayland support for EXWM and X11 application compatibility
+             ;; EXWM requires XWayland to manage X11 windows within Emacs
+             (package
+              (patch-dwl-guile-package dwl-guile
+                                       #:patches (list %patch-xwayland)))
 
              ;; Enable native Qt rendering in Wayland (installs qtwayland)
              (native-qt? #t)
@@ -1324,8 +1686,15 @@ export PATH=\"$HOME/.guix-profile/bin:$HOME/.local/bin:$PATH\"
              (reload-config-on-change? #t)
 
              ;; Command to run after dwl-guile starts
-             ;; foot --server starts a terminal server for fast terminal spawning
-             (startup-command "foot --server <&-")
+             ;; Starts foot terminal server and Emacs daemon
+             (startup-command "foot --server <&- & emacs --daemon <&-")
 
-             ;; Use our custom dwl-guile configuration
-             (config %dwl-guile-config))))))
+             ;; Additional environment variables for EXWM/XWayland integration
+             (environment-variables
+              '(;; Tell XWayland applications where to connect
+                ("DISPLAY" . ":0")
+                ;; Ensure Emacs uses native Wayland
+                ("EMACS_NATIVE_WAYLAND" . "1")))
+
+             ;; Use our comprehensive Emacs-integrated dwl-guile configuration
+             (config %dwl-guile-config)))))))

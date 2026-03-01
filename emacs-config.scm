@@ -145,6 +145,14 @@
    emacs-vterm               ; Terminal emulator
    emacs-eshell-prompt-extras)) ; Fancy eshell
 
+;; EXWM - Emacs X Window Manager
+;; EXWM allows Emacs to manage X11 windows as buffers
+;; When used with dwl-guile, EXWM manages XWayland windows inside Emacs
+(define %emacs-exwm
+  (list
+   emacs-exwm                ; Emacs X Window Manager
+   emacs-xelb))              ; X protocol Emacs Lisp Binding
+
 ;; Themes
 (define %emacs-themes
   (list
@@ -197,6 +205,11 @@
 (define %emacs-packages-evil
   (append %emacs-packages-core
           %emacs-evil))
+
+;; All packages with EXWM (for dwl-guile integration)
+(define %emacs-packages-exwm
+  (append %emacs-packages-core
+          %emacs-exwm))
 
 ;; Export for use in guix-home.scm
 (define %all-emacs-packages %emacs-packages-core)
@@ -566,6 +579,237 @@
 (unless (daemonp)
   (require 'server)
   (unless (server-running-p) (server-start)))
+
+;; =============================================================================
+;; EXWM - Emacs X Window Manager Configuration
+;; =============================================================================
+;; EXWM runs inside Emacs and manages X11 windows as Emacs buffers.
+;; When used with dwl-guile (Wayland), EXWM manages XWayland windows
+;; within the Emacs frame, creating a nested window manager setup.
+;;
+;; Architecture:
+;;   dwl-guile (outer compositor) -> Emacs (pgtk) -> EXWM (inner WM)
+;;
+;; EXWM keybindings use s- (Super) prefix to avoid conflicts with
+;; dwl-guile which also uses Super. EXWM bindings only apply when
+;; an EXWM buffer has focus.
+
+(when (require 'exwm nil t)
+  ;; ---------------------------------------------------------------------------
+  ;; Workspace Configuration
+  ;; ---------------------------------------------------------------------------
+  ;; Number of EXWM workspaces (inside Emacs, separate from dwl-guile tags)
+  (setq exwm-workspace-number 4)
+
+  ;; Show workspace indicator in modeline
+  (setq exwm-workspace-show-all-buffers t)
+  (setq exwm-layout-show-all-buffers t)
+
+  ;; Workspace names
+  (setq exwm-workspace-index-map
+        (lambda (index)
+          (let ((named-workspaces [\"main\" \"web\" \"term\" \"misc\"]))
+            (if (< index (length named-workspaces))
+                (elt named-workspaces index)
+              (number-to-string index)))))
+
+  ;; ---------------------------------------------------------------------------
+  ;; Buffer Naming
+  ;; ---------------------------------------------------------------------------
+  ;; Use class name + title for buffer names
+  (defun my/exwm-update-class ()
+    (exwm-workspace-rename-buffer exwm-class-name))
+
+  (defun my/exwm-update-title ()
+    (pcase exwm-class-name
+      (\"firefox\" (exwm-workspace-rename-buffer (format \"Firefox: %s\" exwm-title)))
+      (\"chromium-browser\" (exwm-workspace-rename-buffer (format \"Chromium: %s\" exwm-title)))
+      (_ (exwm-workspace-rename-buffer (format \"%s: %s\" exwm-class-name exwm-title)))))
+
+  (add-hook 'exwm-update-class-hook #'my/exwm-update-class)
+  (add-hook 'exwm-update-title-hook #'my/exwm-update-title)
+
+  ;; ---------------------------------------------------------------------------
+  ;; EXWM Keybindings
+  ;; ---------------------------------------------------------------------------
+  ;; These bindings work when EXWM buffers have focus
+
+  ;; Global keys (always available, even in X windows)
+  (setq exwm-input-global-keys
+        `(;; Workspace switching with s-1 through s-4
+          ([?\\s-1] . (lambda () (interactive) (exwm-workspace-switch 0)))
+          ([?\\s-2] . (lambda () (interactive) (exwm-workspace-switch 1)))
+          ([?\\s-3] . (lambda () (interactive) (exwm-workspace-switch 2)))
+          ([?\\s-4] . (lambda () (interactive) (exwm-workspace-switch 3)))
+
+          ;; s-r: Rename buffer/workspace
+          ([?\\s-r] . exwm-reset)
+
+          ;; s-w: Switch workspace interactively
+          ([?\\s-w] . exwm-workspace-switch)
+
+          ;; s-&: Launch application
+          ([?\\s-&] . (lambda (command)
+                       (interactive (list (read-shell-command \"$ \")))
+                       (start-process-shell-command command nil command)))
+
+          ;; s-b: Switch buffer
+          ([?\\s-b] . consult-buffer)
+
+          ;; s-d: Toggle between line-mode and char-mode
+          ([?\\s-d] . exwm-input-toggle-keyboard)))
+
+  ;; Prefix keys that should be sent to Emacs (not X windows)
+  (setq exwm-input-prefix-keys
+        '(?\\C-x
+          ?\\C-u
+          ?\\C-h
+          ?\\C-g
+          ?\\M-x
+          ?\\M-`
+          ?\\M-&
+          ?\\M-:
+          ?\\C-\\M-j))  ; Buffer list
+
+  ;; ---------------------------------------------------------------------------
+  ;; Simulation Keys
+  ;; ---------------------------------------------------------------------------
+  ;; Make X applications behave more like Emacs
+  ;; These translate Emacs keybindings to application-native ones
+  (setq exwm-input-simulation-keys
+        '(;; Movement
+          ([?\\C-b] . [left])
+          ([?\\C-f] . [right])
+          ([?\\C-p] . [up])
+          ([?\\C-n] . [down])
+          ([?\\C-a] . [home])
+          ([?\\C-e] . [end])
+          ([?\\M-v] . [prior])
+          ([?\\C-v] . [next])
+          ([?\\C-d] . [delete])
+          ([?\\C-k] . [S-end delete])
+          ;; Cut/copy/paste
+          ([?\\C-w] . [?\\C-x])
+          ([?\\M-w] . [?\\C-c])
+          ([?\\C-y] . [?\\C-v])
+          ;; Search
+          ([?\\C-s] . [?\\C-f])
+          ;; Undo/Redo
+          ([?\\C-/] . [?\\C-z])
+          ([?\\C-?] . [?\\C-y])
+          ;; Save
+          ([?\\C-x ?\\C-s] . [?\\C-s])))
+
+  ;; ---------------------------------------------------------------------------
+  ;; Multi-Monitor Support
+  ;; ---------------------------------------------------------------------------
+  ;; EXWM can manage multiple monitors via RandR
+  (require 'exwm-randr nil t)
+  (when (featurep 'exwm-randr)
+    ;; Configure monitor positions (adjust these for your setup)
+    ;; Example: laptop screen + external monitor
+    (setq exwm-randr-workspace-monitor-plist
+          '(0 \"eDP-1\" 1 \"HDMI-1\" 2 \"eDP-1\" 3 \"HDMI-1\"))
+
+    ;; Auto-detect and configure monitors on connection
+    (defun my/exwm-randr-screen-change ()
+      \"Handle screen changes automatically.\"
+      (start-process-shell-command
+       \"xrandr\" nil \"xrandr --output eDP-1 --auto --output HDMI-1 --auto --right-of eDP-1\"))
+
+    (add-hook 'exwm-randr-screen-change-hook #'my/exwm-randr-screen-change)
+    (exwm-randr-enable))
+
+  ;; ---------------------------------------------------------------------------
+  ;; System Tray
+  ;; ---------------------------------------------------------------------------
+  ;; Enable system tray support (appears in minibuffer area)
+  (require 'exwm-systemtray nil t)
+  (when (featurep 'exwm-systemtray)
+    (setq exwm-systemtray-height 22)
+    (exwm-systemtray-enable))
+
+  ;; ---------------------------------------------------------------------------
+  ;; EXWM + dwl-guile Integration
+  ;; ---------------------------------------------------------------------------
+  ;; Hooks for coordinating with dwl-guile outer compositor
+
+  (defun my/exwm-init-hook ()
+    \"Actions to perform when EXWM initializes.\"
+    ;; Start some useful applications
+    (message \"EXWM initialized inside dwl-guile\")
+
+    ;; Make workspace switching smoother
+    (setq exwm-manage-force-tiling t)
+
+    ;; Start system tray applications (these appear in EXWM's tray)
+    ;; (start-process-shell-command \"nm-applet\" nil \"nm-applet\")
+    ;; (start-process-shell-command \"pasystray\" nil \"pasystray\")
+    )
+
+  (add-hook 'exwm-init-hook #'my/exwm-init-hook)
+
+  ;; Window management hook
+  (defun my/exwm-manage-hook ()
+    \"Actions for newly managed windows.\"
+    ;; Force certain windows to float
+    (when (member exwm-class-name '(\"mpv\" \"feh\" \"Sxiv\"))
+      (exwm-floating-toggle-floating)))
+
+  (add-hook 'exwm-manage-finish-hook #'my/exwm-manage-hook)
+
+  ;; ---------------------------------------------------------------------------
+  ;; Enable EXWM
+  ;; ---------------------------------------------------------------------------
+  ;; Note: Only enable EXWM when running under X/XWayland
+  ;; Check DISPLAY variable to determine if we should start EXWM
+  (when (and (getenv \"DISPLAY\")
+             (not (string-empty-p (getenv \"DISPLAY\"))))
+    (exwm-enable)))
+
+;; =============================================================================
+;; dwl-guile Integration Functions
+;; =============================================================================
+;; Functions for interacting with dwl-guile from within Emacs
+;; These use dwl-guile's IPC mechanism via shell commands
+
+(defun dwl-guile-eval (expr)
+  \"Evaluate a Guile expression in dwl-guile.\"
+  (interactive \"sGuile expression: \")
+  (shell-command (format \"dwl-guile -e '%s'\" expr)))
+
+(defun dwl-guile-view-tag (tag)
+  \"Switch to a dwl-guile tag (1-9).\"
+  (interactive \"nTag (1-9): \")
+  (dwl-guile-eval (format \"(dwl:view #b%09b)\" (ash 1 (1- tag)))))
+
+(defun dwl-guile-move-to-tag (tag)
+  \"Move current window to a dwl-guile tag (1-9).\"
+  (interactive \"nTag (1-9): \")
+  (dwl-guile-eval (format \"(dwl:tag #b%09b)\" (ash 1 (1- tag)))))
+
+(defun dwl-guile-toggle-fullscreen ()
+  \"Toggle fullscreen in dwl-guile.\"
+  (interactive)
+  (dwl-guile-eval \"(dwl:toggle-fullscreen)\"))
+
+(defun dwl-guile-reload-config ()
+  \"Reload dwl-guile configuration.\"
+  (interactive)
+  (dwl-guile-eval \"(dwl:reload-config)\"))
+
+;; Keybindings for dwl-guile control from Emacs (use C-c d prefix)
+(global-set-key (kbd \"C-c d 1\") (lambda () (interactive) (dwl-guile-view-tag 1)))
+(global-set-key (kbd \"C-c d 2\") (lambda () (interactive) (dwl-guile-view-tag 2)))
+(global-set-key (kbd \"C-c d 3\") (lambda () (interactive) (dwl-guile-view-tag 3)))
+(global-set-key (kbd \"C-c d 4\") (lambda () (interactive) (dwl-guile-view-tag 4)))
+(global-set-key (kbd \"C-c d 5\") (lambda () (interactive) (dwl-guile-view-tag 5)))
+(global-set-key (kbd \"C-c d 6\") (lambda () (interactive) (dwl-guile-view-tag 6)))
+(global-set-key (kbd \"C-c d 7\") (lambda () (interactive) (dwl-guile-view-tag 7)))
+(global-set-key (kbd \"C-c d 8\") (lambda () (interactive) (dwl-guile-view-tag 8)))
+(global-set-key (kbd \"C-c d 9\") (lambda () (interactive) (dwl-guile-view-tag 9)))
+(global-set-key (kbd \"C-c d f\") #'dwl-guile-toggle-fullscreen)
+(global-set-key (kbd \"C-c d r\") #'dwl-guile-reload-config)
 ")
 
 ;; =============================================================================
