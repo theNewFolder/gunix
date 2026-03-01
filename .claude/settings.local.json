@@ -57,7 +57,8 @@
       "Bash(curl -sL:*)",
       "Bash(curl --silent:*)",
       "Bash(pgrep:*)",
-      "Bash(gh:*)"
+      "Bash(gh:*)",
+      "Bash(tree:*)"
     ]
   }
 }

@@ -1,0 +1,30 @@
+# Local overrides (machine-specific)
+*.local
+.local/
+.cache/
+
+# Editor backups and swap files
+*~
+*.swp
+*.swo
+*#
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Python
+__pycache__/
+*.pyc
+
+# Node
+node_modules/
+package-lock.json
+
+# Environment-specific configs (if symlinked)
+.env
+.env.local
+
+# Temporary files
+*.tmp
+*.bak

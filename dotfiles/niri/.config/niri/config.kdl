@@ -1,0 +1,386 @@
+// Niri Configuration
+// A scrollable-tiling Wayland compositor with intuitive keybindings
+// Documentation: https://github.com/YaLTeR/niri/wiki/Configuration
+
+// =============================================================================
+// General Settings
+// =============================================================================
+
+// Cursor theme and size
+cursor {
+    theme "Adwaita"
+    size 24
+}
+
+// Input settings
+input {
+    // Keyboard layout
+    keyboard {
+        xkb {
+            layout "us"
+            // Available options: compose, alt, win, super, hyper, menu, altgr, ctrl+alt
+            // You can use multiple modifiers: ctrl+alt, alt+shift
+        }
+        // Repeat settings
+        repeat-delay 600
+        repeat-rate 25
+    }
+
+    // Touchpad settings
+    touchpad {
+        // Tap to click
+        tap
+        // Tap and drag
+        tap-and-drag
+        // Middle click emulation
+        middle-emulation
+        // Acceleration speed (-1.0 to 1.0, default 0.0)
+        accel-speed 0.2
+    }
+
+    // Focus follows mouse
+    focus-follows-mouse {
+        enable
+    }
+}
+
+// =============================================================================
+// Output (Monitor) Configuration
+// =============================================================================
+
+// Example for a single monitor
+output "eDP-1" {
+    // Position (x, y)
+    position x=0 y=0
+    // Scale factor (1.0, 1.5, 2.0, etc.)
+    scale 1.0
+    // Refresh rate (0 for maximum available)
+    variable-refresh-rate
+}
+
+// Uncomment for multi-monitor setups
+// output "HDMI-1" {
+//     position x=1920 y=0
+//     scale 1.0
+// }
+
+// =============================================================================
+// Layout and Windows
+// =============================================================================
+
+// Window animations
+animations {
+    // Workspace switch animation duration in milliseconds
+    workspace-switch {
+        duration-ms 200
+    }
+
+    // Window open/close animation
+    window-open {
+        duration-ms 200
+    }
+
+    // Horizontal window resize
+    horizontal-window-move {
+        duration-ms 200
+    }
+
+    // Vertical window resize
+    vertical-window-move {
+        duration-ms 200
+    }
+}
+
+// Windows configuration
+layout {
+    // Gaps between windows in pixels
+    gaps 6
+
+    // Border width in pixels
+    border {
+        width 2
+        // Focus border color (RGBA)
+        active-color "#00bcd4"
+        // Unfocus border color (RGBA)
+        inactive-color "#404045"
+    }
+
+    // Padding around the workspace
+    padding 6
+
+    // Center focused window
+    center-focused-column "never" // "never", "on-overflow", "always"
+}
+
+// Column-based tiling with scrolling
+// Niri arranges windows in columns that you can scroll through
+// This is the primary layout mode
+workspace-layout {
+    // Default column width
+    default-column-width { proportion 0.5; }
+}
+
+// =============================================================================
+// Workspaces
+// =============================================================================
+
+// Create 9 workspaces with meaningful names
+// Access via Super+1 through Super+9
+workspace "1:emacs" {}
+workspace "2:web" {}
+workspace "3:term" {}
+workspace "4:code" {}
+workspace "5:docs" {}
+workspace "6:media" {}
+workspace "7:chat" {}
+workspace "8:misc" {}
+workspace "9:sys" {}
+
+// =============================================================================
+// Keybindings - Emacs-Integrated Design
+// =============================================================================
+
+// Modifier key: SUPER (like dwl-guile)
+// Design principle: SUPER for compositor, C- and M- reserved for Emacs
+// All bindings follow dwl-guile conventions for consistency
+
+// Bind a key combination
+// bind <modifiers> <key> { action; }
+// Modifiers: Super, Ctrl, Alt, Shift
+// Keys: a-z, 0-9, Return, Space, Escape, Tab, Insert, Delete, Home, End, Page_Up, Page_Down, Left, Right, Up, Down, F1-F24
+
+// =========================================================================
+// SUPER+e: Emacs (Primary Application)
+// =========================================================================
+
+bind Super+E { spawn "emacsclient" "-c" "-a" "emacs"; }
+bind Super+Shift+E { spawn "emacs"; }
+bind Super+Ctrl+E { spawn "emacsclient" "-e" "(kill-emacs)" "||" "emacs" "--daemon"; }
+
+// =========================================================================
+// Application Launchers
+// =========================================================================
+
+bind Super+Return { spawn "foot"; }                           // Terminal
+bind Super+Shift+Return { spawn "emacsclient" "-c" "-e" "(vterm)"; }  // Emacs terminal
+bind Super+D { spawn "wofi" "--show" "drun"; }               // App launcher
+bind Super+P { spawn "wofi" "--show" "run"; }                // Command runner
+bind Super+X { spawn "emacsclient" "-c" "-e" "(call-interactively 'execute-extended-command)"; }  // M-x equivalent
+
+// =========================================================================
+// Window Management
+// =========================================================================
+
+// Close window
+bind Super+Q { close-window; }
+
+// Focus navigation (cycling through windows)
+bind Super+O { focus-column-right; }                  // Next column
+bind Super+Shift+O { focus-column-left; }             // Previous column
+
+// Vim-style navigation
+bind Super+J { focus-column-right; }                  // Right
+bind Super+K { focus-column-left; }                   // Left
+bind Super+H { focus-column-left; }                   // Left
+bind Super+L { focus-column-right; }                  // Right
+
+// Window swapping and resizing
+bind Super+Ctrl+Return { maximize-column; }           // Maximize current window
+bind Super+Tab { focus-workspace-previous; }          // Previous workspace
+
+// =========================================================================
+// Column Resizing (Horizontal Master-Like Behavior)
+// =========================================================================
+
+// Resize columns in/out (similar to dwl-guile's master factor)
+bind Super+Minus { set-column-width "minus" 5%; }    // Decrease column width
+bind Super+Plus { set-column-width "plus" 5%; }      // Increase column width
+bind Super+BracketLeft { set-column-width "minus" 5%; }
+bind Super+BracketRight { set-column-width "plus" 5%; }
+
+// =========================================================================
+// Layout Control
+// ==========================================================================
+
+// Toggle fullscreen for focused window
+bind Super+F { set-window-fullscreen true; }
+
+// Toggle floating for window
+bind Super+Shift+F { toggle-window-floating; }
+
+// Maximize/focus the window (toggle)
+bind Super+M { maximize-column; }
+
+// =========================================================================
+// Workspace/Tag Switching (SUPER + 1-9)
+// =========================================================================
+// These workspaces correspond to dwl-guile's tags for consistency
+
+bind Super+1 { focus-workspace "1:emacs"; }
+bind Super+2 { focus-workspace "2:web"; }
+bind Super+3 { focus-workspace "3:term"; }
+bind Super+4 { focus-workspace "4:code"; }
+bind Super+5 { focus-workspace "5:docs"; }
+bind Super+6 { focus-workspace "6:media"; }
+bind Super+7 { focus-workspace "7:chat"; }
+bind Super+8 { focus-workspace "8:misc"; }
+bind Super+9 { focus-workspace "9:sys"; }
+
+// View all windows
+bind Super+0 { focus-workspace-previous; }
+
+// =========================================================================
+// Move Window to Workspace (SUPER + SHIFT + 1-9)
+// =========================================================================
+
+bind Super+Shift+1 { move-column-to-workspace "1:emacs"; }
+bind Super+Shift+2 { move-column-to-workspace "2:web"; }
+bind Super+Shift+3 { move-column-to-workspace "3:term"; }
+bind Super+Shift+4 { move-column-to-workspace "4:code"; }
+bind Super+Shift+5 { move-column-to-workspace "5:docs"; }
+bind Super+Shift+6 { move-column-to-workspace "6:media"; }
+bind Super+Shift+7 { move-column-to-workspace "7:chat"; }
+bind Super+Shift+8 { move-column-to-workspace "8:misc"; }
+bind Super+Shift+9 { move-column-to-workspace "9:sys"; }
+
+// =========================================================================
+// Monitor Control
+// =========================================================================
+
+// Cycle through outputs (monitors)
+bind Super+Comma { focus-monitor-left; }
+bind Super+Period { focus-monitor-right; }
+
+// Move window to different monitor
+bind Super+Shift+Comma { move-column-to-monitor-left; }
+bind Super+Shift+Period { move-column-to-monitor-right; }
+
+// =========================================================================
+// Session Control
+// =========================================================================
+
+// Quit Niri
+bind Super+Shift+Q { quit; }
+
+// Reload configuration
+bind Super+Shift+R { reload-config; }
+
+// Lock screen
+bind Super+Ctrl+L { spawn "swaylock" "-f" "-c" "000000"; }
+
+// =========================================================================
+// Emacs Integration Bindings
+// =========================================================================
+// These bindings launch specific Emacs functionality
+// Similar to dwl-guile setup for consistency
+
+// Switch buffer (via Emacs consult-buffer)
+bind Super+B { spawn "emacsclient" "-c" "-e" "(call-interactively 'consult-buffer)"; }
+
+// Magit status
+bind Super+G { spawn "emacsclient" "-c" "-e" "(magit-status)"; }
+
+// Org-roam find node
+bind Super+N { spawn "emacsclient" "-c" "-e" "(org-roam-node-find)"; }
+
+// Org agenda
+bind Super+A { spawn "emacsclient" "-c" "-e" "(org-agenda)"; }
+
+// Consult ripgrep (search)
+bind Super+S { spawn "emacsclient" "-c" "-e" "(consult-ripgrep)"; }
+
+// =============================================================================
+// Window Rules (Default Behaviors)
+// =============================================================================
+
+// Emacs always starts on tag 1 (main workspace)
+window-rule {
+    match {
+        app-id "emacs"
+        title "Emacs"
+    }
+    open-on-workspace "1:emacs"
+}
+
+// Browsers on tag 2
+window-rule {
+    match {
+        app-id "firefox"
+    }
+    open-on-workspace "2:web"
+}
+
+window-rule {
+    match {
+        app-id "chromium"
+    }
+    open-on-workspace "2:web"
+}
+
+// Terminals on tag 3
+window-rule {
+    match {
+        app-id "foot"
+    }
+    open-on-workspace "3:term"
+}
+
+// Float dialog windows
+window-rule {
+    match {
+        title "Open File"
+    }
+    floating true
+}
+
+window-rule {
+    match {
+        title "Save File"
+    }
+    floating true
+}
+
+window-rule {
+    match {
+        title "Preferences"
+    }
+    floating true
+}
+
+// Float Emacs popups
+window-rule {
+    match {
+        title "*Completions*"
+    }
+    floating true
+}
+
+window-rule {
+    match {
+        title "*which-key*"
+    }
+    floating true
+}
+
+// =============================================================================
+// Startup Commands
+// =============================================================================
+
+// Run commands on startup
+startup-command "sh" "-c" "waybar &"     // Status bar
+startup-command "sh" "-c" "mako &"       // Notification daemon
+startup-command "sh" "-c" "emacsclient -e '(message \"Emacs ready\")' || emacs --daemon &"  // Start Emacs daemon
+startup-command "sh" "-c" "sleep 1 && emacsclient -c &"  // Open Emacs frame after delay
+
+// Optional: Set wallpaper
+// startup-command "swaybg" "-i" "/path/to/wallpaper.jpg" "-m" "fill"
+
+// =============================================================================
+// Status Bar (Niri Bar)
+// =============================================================================
+
+// Enable on-screen debugging (shows FPS counter)
+// debug {
+//     disable-cursor-plane
+//     wait-for-frame-completion-on-screencopy
+// }

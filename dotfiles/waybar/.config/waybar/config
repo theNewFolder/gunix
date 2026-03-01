@@ -1,0 +1,103 @@
+// Waybar configuration
+// Compatible with dwl-guile, Wayland, and Emacs workflow
+
+{
+    "layer": "top",
+    "position": "top",
+    "height": 30,
+    "spacing": 10,
+    "margin-top": 0,
+    "margin-left": 0,
+    "margin-right": 0,
+    "margin-bottom": 0,
+
+    "modules-left": ["custom/workspaces", "wlr/workspaces"],
+    "modules-center": ["clock"],
+    "modules-right": ["backlight", "pulseaudio", "network", "battery", "custom/menu"],
+
+    // Workspace indicator for dwl-guile
+    "custom/workspaces": {
+        "exec": "printf 'dwl'",
+        "format": "  {} ",
+        "tooltip": false
+    },
+
+    // Wayland workspaces
+    "wlr/workspaces": {
+        "format": "{name}",
+        "on-click": "activate",
+        "on-scroll-up": "hyprctl dispatch workspace e-1",
+        "on-scroll-down": "hyprctl dispatch workspace e+1",
+        "sort-by-number": true,
+        "persistent-workspaces": {
+            "1": [],
+            "2": [],
+            "3": [],
+            "4": [],
+            "5": []
+        }
+    },
+
+    // System clock
+    "clock": {
+        "interval": 60,
+        "format": "  {:%H:%M}",
+        "tooltip-format": "{:%A, %B %d, %Y}",
+        "on-click": "emacsclient -c"
+    },
+
+    // Backlight control
+    "backlight": {
+        "device": "intel_backlight",
+        "format": "{icon} {percent}%",
+        "format-icons": ["🌑", "🌒", "🌓", "🌔", "🌕"],
+        "on-scroll-up": "brightnessctl set +5%",
+        "on-scroll-down": "brightnessctl set 5%-",
+        "smooth-scrolling-threshold": 1
+    },
+
+    // Audio/Volume control
+    "pulseaudio": {
+        "scroll-step": 5,
+        "format": "{icon} {volume}%",
+        "format-muted": "  muted",
+        "format-icons": {
+            "default": ["", "", ""]
+        },
+        "on-click": "pavucontrol",
+        "on-click-right": "pactl set-sink-mute @DEFAULT_SINK@ toggle"
+    },
+
+    // Network status
+    "network": {
+        "interval": 5,
+        "format-wifi": "  {essid} ({signalStrength}%)",
+        "format-ethernet": "  Ethernet",
+        "format-disconnected": "  Offline",
+        "format-linked": "  Linked",
+        "tooltip-format": "IP: {ipaddr}",
+        "on-click": "emacsclient -c"
+    },
+
+    // Battery indicator
+    "battery": {
+        "interval": 30,
+        "states": {
+            "good": 75,
+            "warning": 30,
+            "critical": 15
+        },
+        "format": "{icon} {capacity}%",
+        "format-charging": " {capacity}%",
+        "format-plugged": " {capacity}%",
+        "format-icons": ["", "", "", "", ""],
+        "tooltip-format": "{time}"
+    },
+
+    // Menu button
+    "custom/menu": {
+        "format": " ",
+        "on-click": "rofi -show drun",
+        "tooltip": false
+    }
+}

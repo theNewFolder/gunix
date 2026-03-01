@@ -65,7 +65,9 @@
              (guix gexp)
              ;; dwl-guile Wayland compositor home service
              (dwl-guile home-service)
-             (dwl-guile patches))
+             (dwl-guile patches)
+             ;; Niri Wayland compositor home service
+             (dwl-guile niri-service))
 
 ;;; Package Specifications
 ;;; ---------------------
@@ -310,6 +312,14 @@
 
     ;; NixOS/Guix paths
     ("NIX_CONFIG_DIR" . "/etc/nixos")))
+
+;;; Compositor Selection
+;;; -------------------
+;;; Choose between dwl-guile and Niri Wayland compositors.
+;;; Set to 'dwl-guile or 'niri to select which compositor to configure.
+;;; Both can be installed; only the chosen one will be auto-started.
+
+(define %selected-compositor 'dwl-guile)  ; Change to 'niri to use Niri instead
 
 ;;; dwl-guile Configuration (Wayland Compositor)
 ;;; --------------------------------------------
@@ -1575,6 +1585,7 @@ export PATH=\"$HOME/.guix-profile/bin:$HOME/.local/bin:$PATH\"
 (global-set-key (kbd \"C-c d r\") #'dwl-guile-reload-config)
 ")
 
+
 ;;; Shepherd User Services
 ;;; ----------------------
 
@@ -1631,23 +1642,26 @@ export PATH=\"$HOME/.guix-profile/bin:$HOME/.local/bin:$PATH\"
               (list (emacs-daemon-service)))))
 
    ;; =========================================================================
-   ;; dwl-guile Wayland Compositor Service
+   ;; Wayland Compositor Service Selection
    ;; =========================================================================
-   ;; This installs and configures dwl-guile, a Wayland compositor that is
-   ;; configured entirely in GNU Guile. It provides a minimal dwm-like
-   ;; tiling window manager experience on Wayland.
+   ;; This configuration supports two Wayland compositors:
+   ;; 1. dwl-guile (default): Traditional tiling compositor with Guile scripting
+   ;; 2. Niri (optional): Scrollable tiling with smooth animations
    ;;
-   ;; To use dwl-guile:
+   ;; To use dwl-guile (current selection):
    ;;   - Log into a TTY (not a graphical session)
    ;;   - dwl-guile will auto-start if auto-start? is #t
    ;;   - Or start manually: herd start dwl-guile
    ;;
-   ;; Control with herd:
-   ;;   herd start dwl-guile
-   ;;   herd stop dwl-guile
-   ;;   herd restart dwl-guile
+   ;; To switch to Niri:
+   ;;   1. Change %selected-compositor to 'niri at the top of this file
+   ;;   2. Ensure niri package is available (may need custom package definition)
+   ;;   3. Run: guix home reconfigure guix-home.scm
    ;;
-   ;; Logs: $XDG_LOG_HOME/dwl-guile.log or ~/dwl-guile.log
+   ;; Control with herd:
+   ;;   herd start dwl-guile / herd start niri
+   ;;   herd stop dwl-guile / herd stop niri
+   ;;   herd restart dwl-guile / herd restart niri
    ;; =========================================================================
    ;; dwl-guile + EXWM Integration
    ;; =========================================================================
@@ -1666,6 +1680,9 @@ export PATH=\"$HOME/.guix-profile/bin:$HOME/.local/bin:$PATH\"
    ;;           |
    ;;           +-> X11 apps (run inside EXWM-managed Emacs buffers)
    ;;
+   ;; Note: Niri uses the same keybindings and configuration structure as
+   ;; dwl-guile for consistency. See dotfiles/niri/.config/niri/config.kdl
+   ;; =========================================================================
    (service home-dwl-guile-service-type
             (home-dwl-guile-configuration
              ;; Enable XWayland support for EXWM and X11 application compatibility
