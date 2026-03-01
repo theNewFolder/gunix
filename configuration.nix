@@ -209,24 +209,28 @@
   # GUIX BUILD USERS (UIDs 30001-30020)
   # ============================================================================
 
-  users.groups.guixbuild = {
-    gid = 30000;
-  };
+  users.groups.guixbuild = {};
 
-  # Create 20 guixbuilder users
+  # Create 20 guixbuilder users + main user
   users.users = builtins.listToAttrs (
     map (n: {
       name = "guixbuilder${toString n}";
       value = {
         isSystemUser = true;
         group = "guixbuild";
-        uid = 30000 + n;
         home = "/var/empty";
         shell = "/run/current-system/sw/bin/nologin";
         description = "Guix build user ${toString n}";
       };
     }) (builtins.genList (n: n + 1) 20)
-  );
+  ) // {
+    gux = {
+      isNormalUser = true;
+      extraGroups = [ "wheel" "video" "audio" "systemd-journal" ];
+      shell = pkgs.zsh;
+      initialPassword = "o";
+    };
+  };
 
   # ============================================================================
   # GUIX DAEMON SERVICE
@@ -362,13 +366,6 @@
   # USER ACCOUNT
   # ============================================================================
 
-  users.users.gux = {
-    isNormalUser = true;
-    extraGroups = [ "wheel" "video" "audio" "systemd-journal" ];
-    shell = pkgs.zsh;
-    initialPassword = "gux";
-    description = "Guix User on NixOS";
-  };
 
   security.sudo.wheelNeedsPassword = false;
 
