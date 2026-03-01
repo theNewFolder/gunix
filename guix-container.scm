@@ -46,7 +46,12 @@
              (guix packages)
              (guix download)
              (guix build-system emacs)
-             (srfi srfi-1))
+             (srfi srfi-1)
+             ;; dwl-guile Wayland compositor (requires home-service-dwl-guile channel)
+             ;; Uncomment after running 'guix pull' with updated channels.scm
+             ;; (dwl-guile packages)
+             ;; (dwl-guile patches)
+             )
 
 ;;; ---------------------------------------------------------------------------
 ;;; Package Definitions
@@ -82,6 +87,14 @@
   (list ;; Compositors
         ;; niri  ; Uncomment when niri is available in Guix
         sway                    ; Alternative Wayland compositor (fallback)
+
+        ;; dwl-guile - Guile-configurable Wayland compositor
+        ;; NOTE: Requires home-service-dwl-guile channel to be enabled.
+        ;; After running 'guix pull' with updated channels.scm, uncomment:
+        ;; dwl-guile              ; Guile-configurable dwm-like compositor
+        ;;
+        ;; For XWayland support, use patch-dwl-guile-package in guix-home.scm:
+        ;; (patch-dwl-guile-package dwl-guile #:patches (list %patch-xwayland))
 
         ;; Wayland core
         wayland
@@ -261,7 +274,18 @@ Name=Niri
 Comment=Scrollable-tiling Wayland compositor
 Exec=niri-session
 Type=Application
-DesktopNames=niri")))
+DesktopNames=niri")
+
+   ;; dwl-guile session
+   ;; NOTE: dwl-guile is typically started via Guix Home service (auto-start)
+   ;; or via 'herd start dwl-guile'. This session entry is for display managers.
+   (plain-file "dwl-guile.desktop"
+               "[Desktop Entry]
+Name=dwl-guile
+Comment=Guile-configurable dwm-like Wayland compositor
+Exec=dwl-guile
+Type=Application
+DesktopNames=dwl")))
 
 ;;; ---------------------------------------------------------------------------
 ;;; User Shepherd Services (for Guix Home integration)
@@ -708,4 +732,63 @@ DesktopNames=niri")))
 ;;;   guix-update
 ;;;
 ;;; NixOS can monitor /run/host/trigger-nixos-rebuild for rebuild requests
+
+;;; ---------------------------------------------------------------------------
+;;; dwl-guile Integration
+;;; ---------------------------------------------------------------------------
+
+;;; dwl-guile is a Wayland compositor based on dwl (dwm for Wayland) that is
+;;; configured entirely in GNU Guile. This makes it perfect for Guix users
+;;; who want a minimal, keyboard-driven tiling window manager.
+;;;
+;;; Setup steps:
+;;;
+;;; 1. Update channels (channels.scm now includes home-service-dwl-guile)
+;;;    guix pull
+;;;
+;;; 2. Reconfigure Guix Home to enable dwl-guile:
+;;;    guix home reconfigure guix-home.scm
+;;;
+;;; 3. Starting dwl-guile:
+;;;    - If auto-start? is #t: Log into a TTY, dwl-guile starts automatically
+;;;    - Manual start: herd start dwl-guile
+;;;    - From display manager: Select "dwl-guile" session
+;;;
+;;; Available patches (configure in guix-home.scm):
+;;;   %patch-xwayland        - XWayland support for X11 applications
+;;;   %patch-attachabove     - New windows spawn above current, not in master
+;;;   %patch-monitor-config  - Configure monitor resolution/refresh/adaptive sync
+;;;   %patch-focusmonpointer - Cursor follows monitor focus
+;;;   %patch-movestack       - Move windows up/down in stack (dwl:move-stack)
+;;;   %patch-swallow         - Terminal window swallowing
+;;;
+;;; Example with multiple patches in guix-home.scm:
+;;;   (package
+;;;    (patch-dwl-guile-package dwl-guile
+;;;                             #:patches (list %patch-xwayland
+;;;                                             %patch-movestack
+;;;                                             %patch-attachabove)))
+;;;
+;;; Runtime evaluation (execute Guile in dwl-guile context):
+;;;   dwl-guile -e "(dwl:reload-config)"
+;;;   dwl-guile -e "(dwl:spawn \"foot\")"
+;;;
+;;; REPL support (add to config for interactive development):
+;;;   (dwl:start-repl-server)
+;;;   Then connect with Geiser in Emacs
+;;;
+;;; Key bindings (defaults from guix-home.scm):
+;;;   SUPER + Return        - Open terminal (foot)
+;;;   SUPER + d             - App launcher (wofi)
+;;;   SUPER + e             - Emacsclient
+;;;   SUPER + q             - Close window
+;;;   SUPER + j/k           - Focus next/previous window
+;;;   SUPER + h/l           - Resize master area
+;;;   SUPER + SHIFT + Return - Swap with master
+;;;   SUPER + 1-9           - Switch to tag/workspace
+;;;   SUPER + SHIFT + 1-9   - Move window to tag
+;;;   SUPER + f             - Toggle fullscreen
+;;;   SUPER + SHIFT + Space - Toggle floating
+;;;   SUPER + SHIFT + q     - Quit dwl-guile
+;;;   SUPER + SHIFT + r     - Reload configuration
 

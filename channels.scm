@@ -107,6 +107,39 @@
      "2A39 3FFF 68F4 EF7A 3D29  12AF 6F51 20A0 22FB B2D5"))))
 
  ;; ==========================================================================
+ ;; DWL-Guile Channel (Wayland Compositor Home Service)
+ ;; ==========================================================================
+ ;; Provides a Guix Home service for dwl-guile, a patched version of dwl
+ ;; (dynamic window list) that is configured entirely in GNU Guile.
+ ;;
+ ;; Repository: https://github.com/engstrand-config/home-service-dwl-guile
+ ;;
+ ;; Key features:
+ ;;   - Minimal dwm-like Wayland compositor
+ ;;   - Configuration in GNU Guile (integrated with Guix)
+ ;;   - Auto-start on first TTY login
+ ;;   - Dynamic config reloading
+ ;;   - Various patches available (xwayland, swallow, movestack, etc.)
+ ;;
+ ;; Available patches:
+ ;;   %patch-xwayland       - Enable XWayland support
+ ;;   %patch-attachabove    - New clients spawn above selected client
+ ;;   %patch-monitor-config - Configure monitor resolution/refresh rate
+ ;;   %patch-focusmonpointer - Move cursor with monitor focus
+ ;;   %patch-movestack      - Move clients up/down the stack
+ ;;   %patch-swallow        - Window swallowing (terminal apps render in-place)
+ ;;
+ (channel
+  (name 'home-service-dwl-guile)
+  (url "https://github.com/engstrand-config/home-service-dwl-guile")
+  (branch "main")
+  (introduction
+   (make-channel-introduction
+    "314453a87634d67e914cfdf51d357638902dd9fe"
+    (openpgp-fingerprint
+     "C9BE B8A0 4458 FDDF 1268 1B39 029D 8EB7 7E18 D68C"))))
+
+ ;; ==========================================================================
  ;; RDE Channel (Reproducible Development Environments) - SYSTEM CRAFTERS STYLE
  ;; ==========================================================================
  ;; Created by Andrew Tropin (abcdw), a System Crafters community member.

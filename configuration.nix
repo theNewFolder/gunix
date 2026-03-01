@@ -74,7 +74,23 @@
     dbus = {
       enable = true;
       # Allow container access to system D-Bus
-      packages = [ pkgs.dbus ];
+      packages = [
+        pkgs.dbus
+        # Custom D-Bus policy for Guix containers
+        (pkgs.writeTextDir "share/dbus-1/system.d/guix-container.conf" ''
+          <!DOCTYPE busconfig PUBLIC "-//freedesktop//DTD D-Bus Bus Configuration 1.0//EN"
+            "http://www.freedesktop.org/standards/dbus/1.0/busconfig.dtd">
+          <busconfig>
+            <policy context="default">
+              <!-- Allow containers to connect -->
+              <allow user="*"/>
+              <allow send_destination="*"/>
+              <allow receive_sender="*"/>
+              <allow own="*"/>
+            </policy>
+          </busconfig>
+        '')
+      ];
     };
 
     # greetd with auto-login to Guix session
@@ -343,23 +359,6 @@
   # machined for managing containers
   systemd.services."systemd-machined".enable = true;
 
-  # Allow D-Bus access from containers
-  environment.etc."dbus-1/system.d/guix-container.conf" = {
-    text = ''
-      <!DOCTYPE busconfig PUBLIC "-//freedesktop//DTD D-Bus Bus Configuration 1.0//EN"
-        "http://www.freedesktop.org/standards/dbus/1.0/busconfig.dtd">
-      <busconfig>
-        <policy context="default">
-          <!-- Allow containers to connect -->
-          <allow user="*"/>
-          <allow send_destination="*"/>
-          <allow receive_sender="*"/>
-          <allow own="*"/>
-        </policy>
-      </busconfig>
-    '';
-    mode = "0644";
-  };
 
   # ============================================================================
   # USER ACCOUNT

@@ -58,8 +58,12 @@
              (gnu packages tree-sitter)
              (gnu packages crypto)
              (gnu packages fonts)
+             (gnu packages terminals)
              (gnu services)
-             (guix gexp))
+             (guix gexp)
+             ;; dwl-guile Wayland compositor home service
+             (dwl-guile home-service)
+             (dwl-guile patches))
 
 ;;; Package Specifications
 ;;; ---------------------
@@ -295,6 +299,174 @@
 
     ;; NixOS/Guix paths
     ("NIX_CONFIG_DIR" . "/etc/nixos")))
+
+;;; dwl-guile Configuration (Wayland Compositor)
+;;; --------------------------------------------
+;;; dwl-guile is a Guile-configurable Wayland compositor based on dwl (dwm for Wayland).
+;;; This configuration provides keybindings, rules, and appearance settings.
+;;; For more info: https://github.com/engstrand-config/dwl-guile
+
+(define %dwl-guile-config
+  '(;; =========================================================================
+    ;; General Settings
+    ;; =========================================================================
+    ;; Do not use default keybindings (we define our own below)
+    ;; (setq inhibit-defaults? #t)
+
+    ;; Border width in pixels
+    (setq border-px 2)
+
+    ;; Gap between windows (if supported by layout)
+    (setq gaps-inner 5)
+    (setq gaps-outer 5)
+
+    ;; Focus follows mouse
+    (setq focus-follows-mouse? #t)
+
+    ;; =========================================================================
+    ;; Colors (RGBA format: 0.0-1.0 for each channel)
+    ;; =========================================================================
+    ;; Border color for focused windows (Modus Vivendi cyan accent)
+    (setq border-color-focus '(0.0 0.74 0.82 1.0))    ; #00bcd4
+
+    ;; Border color for unfocused windows (subtle gray)
+    (setq border-color-unfocus '(0.3 0.3 0.3 1.0))    ; #4d4d4d
+
+    ;; Background color
+    (setq root-color '(0.1 0.1 0.1 1.0))              ; #1a1a1a
+
+    ;; =========================================================================
+    ;; Tags (Workspaces)
+    ;; =========================================================================
+    ;; Define 9 tags/workspaces
+    (setq tags '("1" "2" "3" "4" "5" "6" "7" "8" "9"))
+
+    ;; =========================================================================
+    ;; Window Rules
+    ;; =========================================================================
+    ;; Rules for specific applications
+    ;; Format: (dwl-rule #:id "app-id" #:title "title" #:tags <tag-mask> #:floating? <bool>)
+    (set-rules
+     ;; Float dialog windows
+     (dwl-rule #:title "Open File" #:floating? #t)
+     (dwl-rule #:title "Save File" #:floating? #t)
+     (dwl-rule #:title "Preferences" #:floating? #t)
+
+     ;; Assign specific apps to tags
+     ;; (dwl-rule #:id "firefox" #:tags #b000000010)    ; Tag 2
+     ;; (dwl-rule #:id "emacs" #:tags #b000000001)      ; Tag 1
+     )
+
+    ;; =========================================================================
+    ;; Keybindings
+    ;; =========================================================================
+    ;; Modifier key: SUPER (Windows/Command key)
+    ;; Available modifiers: SUPER, ALT, CTRL, SHIFT
+
+    ;; Application launchers
+    (set-keys SUPER "Return"
+              (lambda () (dwl:spawn "foot")))                    ; Terminal
+
+    (set-keys SUPER "d"
+              (lambda () (dwl:spawn "wofi" "--show" "drun")))    ; App launcher
+
+    (set-keys SUPER "e"
+              (lambda () (dwl:spawn "emacsclient" "-c")))        ; Emacs
+
+    (set-keys SUPER SHIFT "e"
+              (lambda () (dwl:spawn "emacs")))                   ; New Emacs instance
+
+    ;; Window management
+    (set-keys SUPER "q"
+              (lambda () (dwl:kill-client)))                     ; Close window
+
+    (set-keys SUPER "j"
+              (lambda () (dwl:focus-stack 1)))                   ; Focus next
+
+    (set-keys SUPER "k"
+              (lambda () (dwl:focus-stack -1)))                  ; Focus previous
+
+    (set-keys SUPER "h"
+              (lambda () (dwl:change-master-factor -0.05)))      ; Shrink master
+
+    (set-keys SUPER "l"
+              (lambda () (dwl:change-master-factor 0.05)))       ; Grow master
+
+    (set-keys SUPER SHIFT "Return"
+              (lambda () (dwl:zoom)))                            ; Swap with master
+
+    (set-keys SUPER "Tab"
+              (lambda () (dwl:view-previous)))                   ; Previous tag
+
+    ;; Layout control
+    (set-keys SUPER "t"
+              (lambda () (dwl:set-layout "tile")))               ; Tiled layout
+
+    (set-keys SUPER "f"
+              (lambda () (dwl:toggle-fullscreen)))               ; Fullscreen
+
+    (set-keys SUPER SHIFT "space"
+              (lambda () (dwl:toggle-floating)))                 ; Float/tile
+
+    (set-keys SUPER "m"
+              (lambda () (dwl:set-layout "monocle")))            ; Monocle layout
+
+    ;; Tag/workspace switching (SUPER + 1-9)
+    (set-keys SUPER "1" (lambda () (dwl:view #b000000001)))
+    (set-keys SUPER "2" (lambda () (dwl:view #b000000010)))
+    (set-keys SUPER "3" (lambda () (dwl:view #b000000100)))
+    (set-keys SUPER "4" (lambda () (dwl:view #b000001000)))
+    (set-keys SUPER "5" (lambda () (dwl:view #b000010000)))
+    (set-keys SUPER "6" (lambda () (dwl:view #b000100000)))
+    (set-keys SUPER "7" (lambda () (dwl:view #b001000000)))
+    (set-keys SUPER "8" (lambda () (dwl:view #b010000000)))
+    (set-keys SUPER "9" (lambda () (dwl:view #b100000000)))
+    (set-keys SUPER "0" (lambda () (dwl:view-all)))              ; View all tags
+
+    ;; Move window to tag (SUPER + SHIFT + 1-9)
+    (set-keys SUPER SHIFT "1" (lambda () (dwl:tag #b000000001)))
+    (set-keys SUPER SHIFT "2" (lambda () (dwl:tag #b000000010)))
+    (set-keys SUPER SHIFT "3" (lambda () (dwl:tag #b000000100)))
+    (set-keys SUPER SHIFT "4" (lambda () (dwl:tag #b000001000)))
+    (set-keys SUPER SHIFT "5" (lambda () (dwl:tag #b000010000)))
+    (set-keys SUPER SHIFT "6" (lambda () (dwl:tag #b000100000)))
+    (set-keys SUPER SHIFT "7" (lambda () (dwl:tag #b001000000)))
+    (set-keys SUPER SHIFT "8" (lambda () (dwl:tag #b010000000)))
+    (set-keys SUPER SHIFT "9" (lambda () (dwl:tag #b100000000)))
+
+    ;; Monitor control (multi-monitor support)
+    (set-keys SUPER "comma"
+              (lambda () (dwl:focus-monitor -1)))                ; Previous monitor
+
+    (set-keys SUPER "period"
+              (lambda () (dwl:focus-monitor 1)))                 ; Next monitor
+
+    (set-keys SUPER SHIFT "comma"
+              (lambda () (dwl:tag-monitor -1)))                  ; Move to prev monitor
+
+    (set-keys SUPER SHIFT "period"
+              (lambda () (dwl:tag-monitor 1)))                   ; Move to next monitor
+
+    ;; Session control
+    (set-keys SUPER SHIFT "q"
+              (lambda () (dwl:quit)))                            ; Quit dwl-guile
+
+    (set-keys SUPER SHIFT "r"
+              (lambda () (dwl:reload-config)))                   ; Reload config
+
+    ;; =========================================================================
+    ;; Startup Hook
+    ;; =========================================================================
+    ;; Commands to run when dwl-guile starts
+    (add-hook! dwl:startup-hook
+               (lambda ()
+                 ;; Start status bar
+                 (dwl:spawn "waybar")
+                 ;; Start notification daemon
+                 (dwl:spawn "mako")
+                 ;; Set wallpaper (if swaybg is available)
+                 ;; (dwl:spawn "swaybg" "-i" "/path/to/wallpaper.jpg" "-m" "fill")
+                 ))))
 
 ;;; Zsh Configuration
 ;;; -----------------
@@ -1112,4 +1284,48 @@ export PATH=\"$HOME/.guix-profile/bin:$HOME/.local/bin:$PATH\"
    (service home-shepherd-service-type
             (home-shepherd-configuration
              (services
-              (list (emacs-daemon-service))))))))
+              (list (emacs-daemon-service)))))
+
+   ;; =========================================================================
+   ;; dwl-guile Wayland Compositor Service
+   ;; =========================================================================
+   ;; This installs and configures dwl-guile, a Wayland compositor that is
+   ;; configured entirely in GNU Guile. It provides a minimal dwm-like
+   ;; tiling window manager experience on Wayland.
+   ;;
+   ;; To use dwl-guile:
+   ;;   - Log into a TTY (not a graphical session)
+   ;;   - dwl-guile will auto-start if auto-start? is #t
+   ;;   - Or start manually: herd start dwl-guile
+   ;;
+   ;; Control with herd:
+   ;;   herd start dwl-guile
+   ;;   herd stop dwl-guile
+   ;;   herd restart dwl-guile
+   ;;
+   ;; Logs: $XDG_LOG_HOME/dwl-guile.log or ~/dwl-guile.log
+   (service home-dwl-guile-service-type
+            (home-dwl-guile-configuration
+             ;; Use dwl-guile with XWayland support for X11 application compatibility
+             ;; Uncomment to enable XWayland:
+             ;; (package
+             ;;  (patch-dwl-guile-package dwl-guile
+             ;;                           #:patches (list %patch-xwayland)))
+
+             ;; Enable native Qt rendering in Wayland (installs qtwayland)
+             (native-qt? #t)
+
+             ;; Auto-start dwl-guile on first TTY login
+             ;; Set to #f if you prefer to start manually or use a display manager
+             (auto-start? #f)
+
+             ;; Automatically reload config when it changes
+             ;; This allows live configuration updates without restarting
+             (reload-config-on-change? #t)
+
+             ;; Command to run after dwl-guile starts
+             ;; foot --server starts a terminal server for fast terminal spawning
+             (startup-command "foot --server <&-")
+
+             ;; Use our custom dwl-guile configuration
+             (config %dwl-guile-config))))))
