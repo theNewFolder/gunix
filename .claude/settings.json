@@ -1,0 +1,107 @@
+{
+  "mcpServers": {
+    "gemini": {
+      "command": "npx",
+      "args": ["-y", "@anthropic/gemini-mcp-server"],
+      "env": {
+        "GEMINI_API_KEY": "${GEMINI_API_KEY}",
+        "GEMINI_MODEL": "gemini-2.0-flash"
+      }
+    },
+    "filesystem": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@anthropic/mcp-server-filesystem",
+        "/home/gux",
+        "/etc/nixos",
+        "/tmp",
+        "/gnu/store"
+      ]
+    },
+    "git": {
+      "command": "npx",
+      "args": ["-y", "@anthropic/mcp-server-git"],
+      "env": {
+        "GIT_AUTHOR_NAME": "gux",
+        "GIT_AUTHOR_EMAIL": "gux@gunix"
+      }
+    },
+    "github": {
+      "command": "npx",
+      "args": ["-y", "@anthropic/mcp-server-github"],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}"
+      }
+    },
+    "fetch": {
+      "command": "npx",
+      "args": ["-y", "@anthropic/mcp-server-fetch"]
+    },
+    "brave-search": {
+      "command": "npx",
+      "args": ["-y", "@anthropic/mcp-server-brave-search"],
+      "env": {
+        "BRAVE_API_KEY": "${BRAVE_API_KEY}"
+      }
+    },
+    "nix-guix": {
+      "command": "nix",
+      "args": [
+        "--extra-experimental-features",
+        "nix-command flakes",
+        "run",
+        "/home/gux/nixos-guix-setup/gemini-mcp"
+      ],
+      "env": {
+        "OLLAMA_MODEL": "qwen2.5:3b",
+        "GEMINI_API_KEY": "${GEMINI_API_KEY}"
+      }
+    },
+    "memory": {
+      "command": "npx",
+      "args": ["-y", "@anthropic/mcp-server-memory"]
+    }
+  },
+  "permissions": {
+    "allow": [
+      "Bash(git:*)",
+      "Bash(nix:*)",
+      "Bash(nix-shell:*)",
+      "Bash(nixos-rebuild:*)",
+      "Bash(guix:*)",
+      "Bash(npm:*)",
+      "Bash(npx:*)",
+      "Bash(node:*)",
+      "Bash(python:*)",
+      "Bash(python3:*)",
+      "Bash(curl:*)",
+      "Bash(wget:*)",
+      "Bash(pgrep:*)",
+      "Bash(systemctl:*)",
+      "Bash(journalctl:*)",
+      "Bash(machinectl:*)",
+      "Bash(ls:*)",
+      "Bash(cat:*)",
+      "Bash(head:*)",
+      "Bash(tail:*)",
+      "Bash(grep:*)",
+      "Bash(find:*)",
+      "Bash(chmod:*)",
+      "Bash(mkdir:*)",
+      "Bash(cp:*)",
+      "Bash(mv:*)",
+      "Bash(rm:*)",
+      "Bash(sudo:*)",
+      "WebSearch",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:gitlab.com)",
+      "WebFetch(domain:discourse.nixos.org)",
+      "WebFetch(domain:wiki.nixos.org)",
+      "WebFetch(domain:mynixos.com)",
+      "WebFetch(domain:guix.gnu.org)",
+      "WebFetch(domain:git.savannah.gnu.org)",
+      "WebFetch(domain:packages.guix.gnu.org)"
+    ]
+  }
+}

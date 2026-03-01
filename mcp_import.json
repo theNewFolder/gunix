@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "auth0": {
+      "command": "npx",
+      "args": ["-y", "@auth0/auth0-mcp-server", "run", "--tools", "auth0_*"],
+      "env": {
+        "DEBUG": "auth0-mcp"
+      }
+    },
+    "context7": {
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp", "--api-key", "${CONTEXT7_API_KEY}"]
+    }
+  }
+}

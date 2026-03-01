@@ -1,0 +1,76 @@
+{
+  "mcpServers": {
+    "gemini": {
+      "command": "npx",
+      "args": ["-y", "@anthropic/gemini-mcp-server"],
+      "env": {
+        "GEMINI_API_KEY": "${GEMINI_API_KEY}",
+        "GEMINI_MODEL": "gemini-2.0-flash"
+      },
+      "description": "Google Gemini AI for auxiliary AI tasks"
+    },
+    "filesystem": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@anthropic/mcp-server-filesystem",
+        "/home/gux",
+        "/etc/nixos",
+        "/tmp",
+        "/gnu/store"
+      ],
+      "description": "Filesystem access for home, NixOS config, and Guix store"
+    },
+    "git": {
+      "command": "npx",
+      "args": ["-y", "@anthropic/mcp-server-git"],
+      "env": {
+        "GIT_AUTHOR_NAME": "gux",
+        "GIT_AUTHOR_EMAIL": "gux@gunix"
+      },
+      "description": "Git operations and repository management"
+    },
+    "github": {
+      "command": "npx",
+      "args": ["-y", "@anthropic/mcp-server-github"],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}"
+      },
+      "description": "GitHub API integration"
+    },
+    "fetch": {
+      "command": "npx",
+      "args": ["-y", "@anthropic/mcp-server-fetch"],
+      "description": "Web content fetching and retrieval"
+    },
+    "brave-search": {
+      "command": "npx",
+      "args": ["-y", "@anthropic/mcp-server-brave-search"],
+      "env": {
+        "BRAVE_API_KEY": "${BRAVE_API_KEY}"
+      },
+      "description": "Brave Search API for web searching"
+    },
+    "nix-guix": {
+      "command": "nix",
+      "args": [
+        "--extra-experimental-features",
+        "nix-command flakes",
+        "run",
+        "/home/gux/nixos-guix-setup/gemini-mcp"
+      ],
+      "env": {
+        "OLLAMA_MODEL": "qwen2.5:3b",
+        "GEMINI_API_KEY": "${GEMINI_API_KEY}",
+        "NIX_CONFIG_DIR": "/etc/nixos",
+        "GUIX_PROFILE": "/home/gux/.guix-profile"
+      },
+      "description": "Nix/Guix package management MCP server with AI assistance"
+    },
+    "memory": {
+      "command": "npx",
+      "args": ["-y", "@anthropic/mcp-server-memory"],
+      "description": "Persistent memory for context retention"
+    }
+  }
+}
