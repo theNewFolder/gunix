@@ -647,13 +647,69 @@
   };
 
   # Git configuration
+  # ============================================================================
+  # GIT CONFIGURATION (Unit 6)
+  # ============================================================================
   programs.git = {
     enable = true;
     userName = "gux";
     userEmail = "gux@gunix";
+
     extraConfig = {
-      init.defaultBranch = "main";
-      pull.rebase = true;
+      core = {
+        editor = "emacsclient -c -a emacs";
+        pager = "less";
+        whitespace = "trailing-space,space-before-tab";
+        excludesfile = "~/.gitignore_global";
+      };
+      init = {
+        defaultBranch = "main";
+      };
+      pull = {
+        rebase = true;
+      };
+      push = {
+        default = "current";
+      };
+      status = {
+        short = true;
+        showUntrackedFiles = "all";
+      };
+      diff = {
+        colorMoved = "dimmed-zebra";
+        context = 3;
+      };
+      merge = {
+        tool = "emacs";
+        conflictstyle = "zdiff3";
+      };
+      color = {
+        ui = "auto";
+        branch = "auto";
+        diff = "auto";
+        status = "auto";
+      };
+      log = {
+        decorate = "short";
+        abbrevCommit = true;
+      };
+      commit = {
+        verbose = true;
+      };
+    };
+
+    aliases = {
+      st = "status";
+      co = "checkout";
+      br = "branch";
+      ci = "commit";
+      unstage = "reset HEAD --";
+      last = "log -1 HEAD";
+      visual = "log --graph --oneline --all";
+      amend = "commit --amend --no-edit";
+      fixup = "commit --fixup";
+      squash = "commit --squash";
+      aliases = "config --get-regexp alias";
     };
   };
 
