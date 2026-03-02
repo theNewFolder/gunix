@@ -46,10 +46,10 @@ NC='\033[0m' # No Color
 
 # Configuration
 INSTALL_DIR="${MCP_INSTALL_DIR:-.}/mcp-servers"
-GLOBAL_INSTALL=false
-UPDATE_MODE=false
-DEV_DEPS=false
-DEBUG="${DEBUG:-0}"
+GLOBAL_INSTALL="false"
+UPDATE_MODE="false"
+DEV_DEPS="false"
+DEBUG="${DEBUG:-false}"
 
 # MCP Packages to install
 declare -a MCP_PACKAGES=(
@@ -93,7 +93,7 @@ print_success() {
 }
 
 debug_print() {
-    if [[ "$DEBUG" == "1" ]]; then
+    if [[ "$DEBUG" == "true" ]]; then
         echo -e "${YELLOW}[DEBUG]${NC} $1"
     fi
 }
@@ -129,7 +129,7 @@ check_npm() {
 
 # Create installation directory if needed
 setup_directories() {
-    if [[ "$GLOBAL_INSTALL" == false ]]; then
+    if [[ "$GLOBAL_INSTALL" == "false" ]]; then
         print_status "Setting up installation directory: $INSTALL_DIR"
 
         if [[ ! -d "$INSTALL_DIR" ]]; then
@@ -155,13 +155,13 @@ install_package() {
     local package="$1"
     local mode="install"
 
-    if [[ "$UPDATE_MODE" == true ]]; then
+    if [[ "$UPDATE_MODE" == "true" ]]; then
         mode="update"
     fi
 
     print_info "Installing $package..."
 
-    if [[ "$GLOBAL_INSTALL" == true ]]; then
+    if [[ "$GLOBAL_INSTALL" == "true" ]]; then
         debug_print "Running: npm $mode -g $package"
         if npm "$mode" -g "$package"; then
             print_success "$package installed globally"
@@ -215,7 +215,7 @@ install_packages() {
 verify_installations() {
     print_header "Verifying Installations"
 
-    if [[ "$GLOBAL_INSTALL" == true ]]; then
+    if [[ "$GLOBAL_INSTALL" == "true" ]]; then
         print_info "Checking globally installed packages..."
         npm list -g "@anthropic" 2>/dev/null | head -20
     else
@@ -234,7 +234,7 @@ generate_info_file() {
     local timestamp
     timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
-    if [[ "$GLOBAL_INSTALL" == true ]]; then
+    if [[ "$GLOBAL_INSTALL" == "true" ]]; then
         info_file="/tmp/.mcp-global-install-info"
     fi
 
@@ -244,7 +244,7 @@ generate_info_file() {
 {
   "mcp_installation_info": {
     "timestamp": "$timestamp",
-    "install_mode": "$([ "$GLOBAL_INSTALL" == true ] && echo 'global' || echo 'local')",
+    "install_mode": "$([ "$GLOBAL_INSTALL" == "true" ] && echo 'global' || echo 'local')",
     "install_directory": "$INSTALL_DIR",
     "packages_count": ${#MCP_PACKAGES[@]},
     "npm_version": "$(npm --version)",
@@ -273,7 +273,7 @@ display_integration_instructions() {
     echo -e "${BLUE}To integrate MCP servers with Claude or similar clients:${NC}"
     echo ""
 
-    if [[ "$GLOBAL_INSTALL" == true ]]; then
+    if [[ "$GLOBAL_INSTALL" == "true" ]]; then
         echo "1. Update your .mcp.json or similar config to use these commands:"
         echo ""
         echo '   "gemini": {"command": "npx", "args": ["-y", "@anthropic/gemini-mcp-server"]},'
@@ -308,15 +308,15 @@ parse_args() {
     while [[ $# -gt 0 ]]; do
         case "$1" in
             -g|--global)
-                GLOBAL_INSTALL=true
+                GLOBAL_INSTALL="true"
                 shift
                 ;;
             -u|--update)
-                UPDATE_MODE=true
+                UPDATE_MODE="true"
                 shift
                 ;;
             -d|--dev)
-                DEV_DEPS=true
+                DEV_DEPS="true"
                 shift
                 ;;
             -h|--help)
@@ -354,7 +354,7 @@ main() {
     echo ""
 
     # Setup directories
-    if [[ "$GLOBAL_INSTALL" == false ]]; then
+    if [[ "$GLOBAL_INSTALL" == "false" ]]; then
         setup_directories
         echo ""
     fi

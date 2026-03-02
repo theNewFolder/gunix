@@ -35,6 +35,7 @@
 #   BRAVE_API_KEY         Brave Search API key
 #   TEST_TIMEOUT          Timeout for tests in seconds (default: 30)
 #   SKIP_SLOW_TESTS       Set to 1 to skip slow tests
+#   NIX_GUIX_SERVER_PATH  Path to nix-guix server (default: /home/gux/gunix/gemini-mcp/server.py)
 #
 # Exit Codes:
 #   0 - All tests passed
@@ -71,11 +72,11 @@ NC='\033[0m' # No Color
 # Configuration
 MCP_CONFIG_FILE="${MCP_CONFIG_FILE:-.mcp.json}"
 SINGLE_SERVER="${SINGLE_SERVER:-}"
-QUICK_MODE=false
+QUICK_MODE="false"
 VERBOSE="${VERBOSE:-false}"
-DEBUG="${DEBUG:-0}"
+DEBUG="${DEBUG:-false}"
 TEST_TIMEOUT="${TEST_TIMEOUT:-30}"
-SKIP_SLOW_TESTS="${SKIP_SLOW_TESTS:-0}"
+SKIP_SLOW_TESTS="${SKIP_SLOW_TESTS:-false}"
 
 # Test results tracking
 declare -A TEST_RESULTS
@@ -269,7 +270,7 @@ test_gemini() {
     # Test connectivity (if curl available and not in quick mode)
     if ! command_exists curl; then
         record_test "gemini:connectivity" "SKIP"
-    elif [[ "$QUICK_MODE" == true ]]; then
+    elif [[ "$QUICK_MODE" == "true" ]]; then
         record_test "gemini:connectivity" "SKIP"
     else
         print_verbose "Testing Gemini API connectivity..."
@@ -442,7 +443,7 @@ test_nix_guix() {
     print_section "Testing Nix/Guix MCP"
 
     # Check if the server exists in the project
-    local nix_guix_server="/home/nixos/nixos-guix-setup/gemini-mcp/server.py"
+    local nix_guix_server="${NIX_GUIX_SERVER_PATH:-/home/gux/gunix/gemini-mcp/server.py}"
 
     if [[ -f "$nix_guix_server" ]]; then
         record_test "nix-guix:exists" "PASS" "0"
@@ -484,8 +485,8 @@ parse_args() {
                 shift 2
                 ;;
             -q|--quick)
-                QUICK_MODE=true
-                SKIP_SLOW_TESTS=1
+                QUICK_MODE="true"
+                SKIP_SLOW_TESTS="true"
                 shift
                 ;;
             -v|--verbose)
@@ -493,7 +494,7 @@ parse_args() {
                 shift
                 ;;
             -d|--debug)
-                DEBUG=1
+                DEBUG="true"
                 VERBOSE="true"
                 shift
                 ;;
@@ -539,42 +540,58 @@ run_all_tests() {
 
     # Run tests
     if [[ -z "$SINGLE_SERVER" ]] || [[ "$SINGLE_SERVER" == "gemini" ]]; then
-        test_gemini || true
+        if ! test_gemini; then
+            print_warning "Gemini MCP test returned non-zero exit code"
+        fi
         echo ""
     fi
 
     if [[ -z "$SINGLE_SERVER" ]] || [[ "$SINGLE_SERVER" == "filesystem" ]]; then
-        test_filesystem || true
+        if ! test_filesystem; then
+            print_warning "Filesystem MCP test returned non-zero exit code"
+        fi
         echo ""
     fi
 
     if [[ -z "$SINGLE_SERVER" ]] || [[ "$SINGLE_SERVER" == "git" ]]; then
-        test_git || true
+        if ! test_git; then
+            print_warning "Git MCP test returned non-zero exit code"
+        fi
         echo ""
     fi
 
     if [[ -z "$SINGLE_SERVER" ]] || [[ "$SINGLE_SERVER" == "github" ]]; then
-        test_github || true
+        if ! test_github; then
+            print_warning "GitHub MCP test returned non-zero exit code"
+        fi
         echo ""
     fi
 
     if [[ -z "$SINGLE_SERVER" ]] || [[ "$SINGLE_SERVER" == "fetch" ]]; then
-        test_fetch || true
+        if ! test_fetch; then
+            print_warning "Fetch MCP test returned non-zero exit code"
+        fi
         echo ""
     fi
 
     if [[ -z "$SINGLE_SERVER" ]] || [[ "$SINGLE_SERVER" == "brave-search" ]]; then
-        test_brave_search || true
+        if ! test_brave_search; then
+            print_warning "Brave Search MCP test returned non-zero exit code"
+        fi
         echo ""
     fi
 
     if [[ -z "$SINGLE_SERVER" ]] || [[ "$SINGLE_SERVER" == "memory" ]]; then
-        test_memory || true
+        if ! test_memory; then
+            print_warning "Memory MCP test returned non-zero exit code"
+        fi
         echo ""
     fi
 
     if [[ -z "$SINGLE_SERVER" ]] || [[ "$SINGLE_SERVER" == "nix-guix" ]]; then
-        test_nix_guix || true
+        if ! test_nix_guix; then
+            print_warning "Nix/Guix MCP test returned non-zero exit code"
+        fi
         echo ""
     fi
 

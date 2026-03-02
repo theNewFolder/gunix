@@ -67,13 +67,13 @@ GEMINI_API_KEY="${GEMINI_API_KEY:-}"
 GEMINI_MODEL="${GEMINI_MODEL:-gemini-2.0-flash}"
 MCP_TIMEOUT="${MCP_TIMEOUT:-300}"
 MCP_LOG_LEVEL="${MCP_LOG_LEVEL:-default}"
-DEBUG="${DEBUG:-0}"
-VERBOSE=false
+DEBUG="${DEBUG:-false}"
+VERBOSE="false"
 
 # Mode flags
-CHECK_MODE=false
-LIST_MODELS_MODE=false
-HELP_MODE=false
+CHECK_MODE="false"
+LIST_MODELS_MODE="false"
+HELP_MODE="false"
 
 # Supported models
 declare -A SUPPORTED_MODELS=(
@@ -121,7 +121,7 @@ print_success() {
 }
 
 print_debug() {
-    if [[ "$DEBUG" == "1" ]] || [[ "$VERBOSE" == true ]]; then
+    if [[ "$DEBUG" == "true" ]] || [[ "$VERBOSE" == "true" ]]; then
         echo -e "${MAGENTA}[DEBUG]${NC} $1"
     fi
 }
@@ -324,20 +324,20 @@ parse_args() {
                 shift 2
                 ;;
             -c|--check)
-                CHECK_MODE=true
+                CHECK_MODE="true"
                 shift
                 ;;
             -l|--list-models)
-                LIST_MODELS_MODE=true
+                LIST_MODELS_MODE="true"
                 shift
                 ;;
             -d|--debug)
-                DEBUG=1
-                VERBOSE=true
+                DEBUG="true"
+                VERBOSE="true"
                 shift
                 ;;
             -h|--help)
-                HELP_MODE=true
+                HELP_MODE="true"
                 shift
                 ;;
             *)
@@ -386,17 +386,17 @@ main() {
     load_config
 
     # Handle different modes
-    if [[ "$HELP_MODE" == true ]]; then
+    if [[ "$HELP_MODE" == "true" ]]; then
         print_help
         exit 0
     fi
 
-    if [[ "$LIST_MODELS_MODE" == true ]]; then
+    if [[ "$LIST_MODELS_MODE" == "true" ]]; then
         list_models
         exit 0
     fi
 
-    if [[ "$CHECK_MODE" == true ]]; then
+    if [[ "$CHECK_MODE" == "true" ]]; then
         echo ""
         run_diagnostics
         exit 0

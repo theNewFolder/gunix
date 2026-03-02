@@ -57,7 +57,7 @@
         "--extra-experimental-features",
         "nix-command flakes",
         "run",
-        "/home/gux/nixos-guix-setup/gemini-mcp"
+        "/home/gux/gunix/gemini-mcp"
       ],
       "env": {
         "OLLAMA_MODEL": "qwen2.5:3b",
@@ -71,6 +71,22 @@
       "command": "npx",
       "args": ["-y", "@anthropic/mcp-server-memory"],
       "description": "Persistent memory for context retention"
+    },
+    "auth0": {
+      "command": "npx",
+      "args": ["-y", "@auth0/auth0-mcp-server", "run", "--tools", "auth0_*"],
+      "env": {
+        "DEBUG": "auth0-mcp"
+      },
+      "description": "Auth0 identity and authentication management"
+    },
+    "context7": {
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp"],
+      "env": {
+        "CONTEXT7_API_KEY": "${CONTEXT7_API_KEY}"
+      },
+      "description": "Upstash Context7 for up-to-date library documentation"
     }
   }
 }
