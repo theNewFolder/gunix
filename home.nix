@@ -383,32 +383,67 @@
   # ============================================================================
 
   # ZSH Shell configuration
+  # ============================================================================
+  # ZSH SHELL CONFIGURATION (Unit 6)
+  # ============================================================================
   programs.zsh = {
     enable = true;
     enableCompletion = true;
     enableVteIntegration = true;
+
+    # History configuration (Unit 6)
+    history = {
+      size = 50000;
+      extended = true;
+      path = "$HOME/.zsh_history";
+      share = true;
+      ignoreAllDups = true;
+      ignoreSpace = true;
+    };
+
+    # Enable plugins (Unit 6)
     syntaxHighlighting.enable = true;
     autosuggestion.enable = true;
 
+    # Shell aliases (Unit 6)
     shellAliases = {
-      ls = "ls --color=auto";
+      # Navigation
       ll = "ls -lah";
-      grep = "grep --color=auto";
+      la = "ls -A";
+      l = "ls -1";
 
-      # Guix commands (if still using Guix)
-      gs = "guix shell";
-      gp = "guix pull";
-      gc = "guix gc";
+      # Safe operations
+      rm = "rm -i";
+      cp = "cp -i";
+      mv = "mv -i";
+
+      # Nix translations (Unit 6)
+      nup = "nix flake update";
+      nsr = "nix shell";
+      nsp = "nix search nixpkgs";
+      nr = "nix run";
+
+      # Emacs shortcuts (Unit 6)
+      e = "emacsclient -c -a emacs";
+      et = "emacsclient -t -a emacs";
+
+      # Utilities
+      grep = "grep --color=auto";
+      ls = "ls --color=auto";
     };
 
+    # Emacs key bindings (Unit 6)
     initExtra = ''
-      # Additional zsh configuration
-      export HISTFILE=~/.cache/zsh/history
-      export HISTSIZE=10000
-      export SAVEHIST=10000
-
-      # Wayland session
+      bindkey -e
+      setopt INTERACTIVE_COMMENTS EXTENDED_GLOB
+      unsetopt BEEP
+      export LESS='-R -S -X -F'
+      autoload -Uz prompt_subst
+      setopt PROMPT_SUBST
+      PROMPT='%F{blue}%n@%m%f %F{cyan}%~%f %# '
+      RPROMPT='%F{gray}%*%f'
       export WAYLAND_DISPLAY=wayland-0
+      [ -f ~/.zshrc.local ] && source ~/.zshrc.local
     '';
   };
 
