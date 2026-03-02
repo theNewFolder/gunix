@@ -25,9 +25,32 @@
     XDG_CURRENT_DESKTOP = "ewm";
     EWM_SESSION = "1";
 
-    # Development
-    EDITOR = "emacsclient -c";
+    # Locale settings (Unit 6)
+    LANG = "en_US.UTF-8";
+    LC_ALL = "en_US.UTF-8";
+
+    # Editor configuration (Unit 6)
+    EDITOR = "emacsclient -c -a emacs";
+    VISUAL = "emacsclient -c -a emacs";
+    ALTERNATE_EDITOR = "emacs";
+
+    # Pager for man pages (Unit 6)
     PAGER = "less";
+
+    # Age secrets management (Unit 6 - may be used in Unit 7)
+    AGE_IDENTITY_FILE = "$HOME/.config/age/keys.txt";
+    SOPS_AGE_KEY_FILE = "$HOME/.config/age/keys.txt";
+
+    # MCP (Model Context Protocol) configuration paths (Unit 6 - may be used in Unit 7)
+    MCP_CONFIG_DIR = "$HOME/.config/mcp";
+    MCP_SERVERS_CONFIG = "$HOME/.config/mcp/servers.json";
+
+    # Ollama configuration (Unit 6 - may be used in Unit 7)
+    OLLAMA_MODEL = "qwen2.5:3b";
+    OLLAMA_HOST = "http://localhost:11434";
+
+    # NixOS paths (Unit 6)
+    NIX_CONFIG_DIR = "/etc/nixos";
   };
 
   # ============================================================================
@@ -223,28 +246,71 @@
     enable = true;
     enableCompletion = true;
     enableVteIntegration = true;
+
+    # History configuration (Unit 6)
+    history = {
+      size = 50000;
+      extended = true;
+      path = "$HOME/.zsh_history";
+      share = true;
+      ignoreAllDups = true;
+      ignoreSpace = true;
+    };
+
+    # Enable plugins (Unit 6)
     syntaxHighlighting.enable = true;
     autosuggestion.enable = true;
 
+    # Shell aliases - organized by category (Unit 6)
     shellAliases = {
-      ls = "ls --color=auto";
+      # Navigation shortcuts
       ll = "ls -lah";
-      grep = "grep --color=auto";
+      la = "ls -A";
+      l = "ls -1";
 
-      # Guix commands (if still using Guix)
-      gs = "guix shell";
-      gp = "guix pull";
-      gc = "guix gc";
+      # Safe operations
+      rm = "rm -i";
+      cp = "cp -i";
+      mv = "mv -i";
+
+      # Nix translations (Guix → Nix) - Unit 6
+      nup = "nix flake update";                    # guix pull → nix flake update
+      nsr = "nix shell";                           # guix shell → nix shell
+      nsp = "nix search nixpkgs";                  # gsearch → nix search nixpkgs
+      nr = "nix run";                              # ghr → nix run
+
+      # Emacs shortcuts - Unit 6
+      e = "emacsclient -c -a emacs";               # Emacs GUI
+      et = "emacsclient -t -a emacs";              # Emacs terminal
+
+      # Utilities
+      grep = "grep --color=auto";
+      ls = "ls --color=auto";
     };
 
+    # Emacs key bindings and additional configuration (Unit 6)
     initExtra = ''
-      # Additional zsh configuration
-      export HISTFILE=~/.cache/zsh/history
-      export HISTSIZE=10000
-      export SAVEHIST=10000
+      # Use Emacs key bindings
+      bindkey -e
+
+      # Basic options
+      setopt INTERACTIVE_COMMENTS EXTENDED_GLOB
+      unsetopt BEEP
+
+      # Less options
+      export LESS='-R -S -X -F'
+
+      # Prompt setup
+      autoload -Uz prompt_subst
+      setopt PROMPT_SUBST
+      PROMPT='%F{blue}%n@%m%f %F{cyan}%~%f %# '
+      RPROMPT='%F{gray}%*%f'
 
       # Wayland session
       export WAYLAND_DISPLAY=wayland-0
+
+      # Source local zsh config if it exists
+      [ -f ~/.zshrc.local ] && source ~/.zshrc.local
     '';
   };
 
@@ -448,13 +514,69 @@
   };
 
   # Git configuration
+  # ============================================================================
+  # GIT CONFIGURATION (Unit 6)
+  # ============================================================================
   programs.git = {
     enable = true;
     userName = "gux";
     userEmail = "gux@gunix";
+
     extraConfig = {
-      init.defaultBranch = "main";
-      pull.rebase = true;
+      core = {
+        editor = "emacsclient -c -a emacs";
+        pager = "less";
+        whitespace = "trailing-space,space-before-tab";
+        excludesfile = "~/.gitignore_global";
+      };
+      init = {
+        defaultBranch = "main";
+      };
+      pull = {
+        rebase = true;
+      };
+      push = {
+        default = "current";
+      };
+      status = {
+        short = true;
+        showUntrackedFiles = "all";
+      };
+      diff = {
+        colorMoved = "dimmed-zebra";
+        context = 3;
+      };
+      merge = {
+        tool = "emacs";
+        conflictstyle = "zdiff3";
+      };
+      color = {
+        ui = "auto";
+        branch = "auto";
+        diff = "auto";
+        status = "auto";
+      };
+      log = {
+        decorate = "short";
+        abbrevCommit = true;
+      };
+      commit = {
+        verbose = true;
+      };
+    };
+
+    aliases = {
+      st = "status";
+      co = "checkout";
+      br = "branch";
+      ci = "commit";
+      unstage = "reset HEAD --";
+      last = "log -1 HEAD";
+      visual = "log --graph --oneline --all";
+      amend = "commit --amend --no-edit";
+      fixup = "commit --fixup";
+      squash = "commit --squash";
+      aliases = "config --get-regexp alias";
     };
   };
 
@@ -548,6 +670,59 @@
       # Launch Emacs with EWM module support
       exec emacs "$@"
     '';
+  };
+
+  # ============================================================================
+  # EMACS CONFIGURATION (Unit 5)
+  # ============================================================================
+  # Emacs with pgtk build for Wayland support, native compilation enabled
+  # All 50+ packages from manifest-emacs.scm migrated to nixpkgs equivalents
+
+  programs.emacs = {
+    enable = true;
+    package = pkgs.emacs-pgtk;
+
+    extraPackages = epkgs: with epkgs; [
+      # UI Enhancement
+      doom-modeline all-the-icons nerd-icons which-key helpful general
+
+      # Completion Framework (Vertico Stack)
+      vertico orderless marginalia consult embark corfu cape
+
+      # Org Mode and Knowledge Management
+      org org-roam org-roam-ui org-appear org-modern org-superstar
+      org-download visual-fill-column
+
+      # Version Control (Magit and Git Integration)
+      magit git-gutter git-timemachine git-link forge
+
+      # Development Tools
+      eglot flycheck yasnippet yasnippet-snippets treesit-auto
+      projectile perspective
+
+      # Language Support
+      geiser geiser-guile nix-mode markdown-mode yaml-mode json-mode
+      rust-mode go-mode python-mode
+
+      # Code Quality and Formatting
+      rainbow-delimiters hl-todo ws-butler smartparens wgrep
+
+      # Terminal and Shell Integration
+      vterm eshell-prompt-extras
+
+      # Theming and Aesthetics
+      doom-themes ef-themes modus-themes catppuccin-theme
+
+      # Evil Mode (Vim Keybindings) - Optional
+      evil evil-collection evil-surround undo-tree
+
+      # Direnv Integration
+      envrc
+    ];
+
+    # Point to our Elisp configuration files
+    initFile = /home/gux/gunix/home/emacs/init.el;
+    earlyInitFile = /home/gux/gunix/home/emacs/early-init.el;
   };
 
   # ============================================================================
