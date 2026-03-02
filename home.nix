@@ -31,7 +31,7 @@
   };
 
   # ============================================================================
-  # PACKAGES - CORE BASE PACKAGES (Unit 2)
+  # PACKAGES - CORE BASE PACKAGES (Unit 2) + DEVELOPMENT TOOLS (Unit 3)
   # ============================================================================
 
   home.packages = with pkgs; [
@@ -116,6 +116,102 @@
     # ========================================================================
     ewm-core         # Wayland compositor dynamic module
     emacs-ewm        # Emacs integration for EWM
+
+    # ========================================================================
+    # Language-Specific Compilers and Interpreters (Unit 3)
+    # ========================================================================
+    gcc-toolchain    # GNU C/C++ Compiler with support libraries
+    gccgo            # Go compiler from GCC
+    rustup           # Rust toolchain installer
+    rust             # Rust programming language compiler
+    clang            # LLVM C/C++ compiler
+    llvm             # LLVM compiler infrastructure
+    go               # Go programming language
+    python3          # Python interpreter
+    python3Packages.pip   # Python package installer
+    nodejs           # Node.js JavaScript runtime
+    ruby             # Ruby programming language
+    ghc              # Glasgow Haskell Compiler
+    nasm             # Netwide Assembler
+    perl             # Perl programming language
+
+    # ========================================================================
+    # Build Tools and Package Managers (Unit 3)
+    # ========================================================================
+    cmake            # Cross-platform build system
+    meson            # Fast build system
+    ninja            # Small build system
+    autoconf         # GNU Autoconf macro package
+    automake         # GNU Automake build tool
+    libtool          # GNU Libtool for building libraries
+    pkg-config       # Helper tool for build flags
+    cargo            # Rust package manager
+    bundler          # Ruby dependency manager
+
+    # ========================================================================
+    # Debuggers and Profiling Tools (Unit 3)
+    # ========================================================================
+    gdb              # GNU Debugger
+    lldb             # LLVM Debugger
+    valgrind         # Memory debugging and profiling
+    perf             # Linux profiling with performance counters
+    strace           # System call tracer
+    ltrace           # Library call tracer
+    rr               # Record and replay debugger
+
+    # ========================================================================
+    # LSP (Language Server Protocol) Servers (Unit 3)
+    # ========================================================================
+    clangd           # C/C++/Objective-C language server
+    rust-analyzer    # Rust language server
+    gopls            # Go language server
+    python3Packages.pylsp  # Python language server
+    nodePackages.typescript-language-server  # TypeScript/JavaScript LSP
+    texlab           # LaTeX language server
+    nil              # Nix language server
+
+    # ========================================================================
+    # Build and Compilation Support (Unit 3)
+    # ========================================================================
+    binutils         # Binary utilities (ld, as, nm, objdump, etc.)
+    gfortran         # GNU Fortran Compiler
+    ccls             # C/C++ language server using clang
+
+    # ========================================================================
+    # Version Control Tools (Unit 3)
+    # ========================================================================
+    mercurial        # Distributed version control
+    diffutils        # GNU diff utilities
+    patch            # GNU patch utility
+
+    # ========================================================================
+    # Documentation and Source Tools (Unit 3)
+    # ========================================================================
+    ctags            # Generate tag files for source navigation
+    universal-ctags  # Universal Ctags (improved ctags)
+    cscope           # Code browser and search tool
+    doxygen          # Documentation generator
+
+    # ========================================================================
+    # Code Quality and Testing (Unit 3)
+    # ========================================================================
+    shellcheck       # Shell script static analyzer
+    hadolint         # Dockerfile linter
+    yamllint         # YAML linter
+    pylint           # Python code analyzer
+
+    # ========================================================================
+    # System Libraries and Headers (Unit 3)
+    # ========================================================================
+    glibc            # GNU C Library
+    linux-headers    # Linux kernel headers
+    libffi           # Foreign function interface library
+    openssl          # Secure Sockets Layer and cryptography libraries
+
+    # ========================================================================
+    # Additional Utilities (Unit 3)
+    # ========================================================================
+    man-pages        # Linux man pages
   ];
 
   # ============================================================================
