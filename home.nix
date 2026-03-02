@@ -261,6 +261,121 @@
     # Additional Utilities (Unit 3)
     # ========================================================================
     man-pages        # Linux man pages
+
+    # ========================================================================
+    # WAYLAND ECOSYSTEM (Unit 4)
+    # ========================================================================
+
+    # Wayland Libraries and Protocols
+    wayland          # Wayland protocol library
+    weston           # Reference Wayland compositor
+    libxkbcommon     # XKB keyboard handling
+    wayland-protocols    # Additional Wayland protocols
+    libwl-clipboard  # Wayland clipboard utilities
+
+    # Display and Input Tools
+    wl-clipboard     # Wayland clipboard utilities (wl-copy/wl-paste)
+    cliphist         # Clipboard history manager
+    wtype            # Text input tool for Wayland
+    xwayland         # X11 compatibility layer for Wayland
+
+    # Window Management and Wayland Compositors
+    sway             # i3-like Wayland compositor
+    swaylock         # Screen locker for Wayland
+    swayidle         # Idle management for Wayland
+    swaybg           # Background image setter for Wayland
+    waybar           # Polybar-like status bar for Wayland
+    wofi             # Application launcher for Wayland
+    wlogout          # Logout menu for Wayland
+
+    # Screenshot and Screen Recording
+    grim             # Screenshot utility for Wayland
+    slurp            # Region selection tool for Wayland
+    wf-recorder      # Screen recorder for Wayland
+    obs              # Open Broadcaster Software
+
+    # Screen Management
+    wdisplays        # Display configuration GUI
+    kanshi           # Dynamic display configuration
+
+    # Notification Daemon
+    mako             # Lightweight notification daemon
+
+    # Terminal Emulators (Wayland-native)
+    foot             # Fast Wayland terminal emulator
+    alacritty        # GPU-accelerated terminal
+    kitty            # GPU-based terminal emulator
+    wezterm          # Rust-based GPU terminal
+
+    # Input and Keyboard Configuration
+    libinput         # Input device library
+    libinput-gestures    # Touchpad gesture support
+
+    # Cursor and Pointer Management
+    xcursor-themes   # X11 cursor theme files
+    libxcursor       # X cursor library
+
+    # File Managers (Wayland-compatible)
+    thunar           # Lightweight file manager
+    nemo             # Modern file manager
+    pcmanfm-qt       # Qt-based file manager
+    nautilus         # GNOME file manager
+
+    # Web Browsers (Wayland-native)
+    firefox          # Firefox (supports Wayland)
+    chromium         # Chromium browser (Wayland capable)
+
+    # Media Players
+    mpv              # Lightweight media player
+    vlc              # VLC media player
+    ffmpeg           # Multimedia framework
+
+    # Text Editors (Wayland-compatible)
+    gedit            # GNOME text editor
+    mousepad         # Lightweight text editor
+
+    # Development Tools for Wayland
+    wayland-utils    # Wayland utilities (wayland-info, etc.)
+    wlroots          # Modular Wayland compositor library
+    libdecor         # Client-side window decoration support
+
+    # Color and Theme Management
+    glib             # GLib utilities
+    dbus             # Message bus system
+    gsettings-desktop-schemas  # Settings schemas for desktops
+
+    # Utility Applications
+    imagemagick      # Image manipulation
+    feh              # Image viewer
+    zathura          # Lightweight document viewer
+    pavucontrol      # PulseAudio volume control GUI
+    playerctl        # Media player control
+
+    # Network and Connectivity
+    networkmanager   # Network management daemon
+    nm-applet        # NetworkManager GUI applet
+    blueman          # Bluetooth management GUI
+
+    # System Tools (Wayland-related)
+    btop             # Modern resource monitor
+    lf               # Terminal file manager
+    fzf              # Fuzzy finder
+    ripgrep          # Fast recursive grep
+    fd               # Simple find replacement
+
+    # Power Management
+    elogind          # User login and power management
+
+    # System Fonts
+    iosevka          # Customizable monospace font
+    noto-fonts       # Unicode font coverage
+    liberation-fonts # Liberation fonts (metric compatible)
+    fira-code        # Monospace font with ligatures
+
+    # Audio and Sound
+    pulseaudio       # PulseAudio sound server
+    alsa-utils       # ALSA utilities (alsamixer, etc.)
+    cmus             # Console music player
   ];
 
   # ============================================================================
@@ -559,12 +674,110 @@
   };
 
   # ============================================================================
-  # DOTFILES - MANUAL FILE MANAGEMENT
+  # ============================================================================
+  # DOTFILES MANAGEMENT - XDG CONFIG FILES (Unit 6)
   # ============================================================================
 
-  # For waybar and other configs that are in dotfiles, we rely on:
-  # - User manually stowing dotfiles: cd dotfiles && stow waybar foot zsh git
-  # - Or using Home Manager's file system for simple configs
+  xdg.configFile."niri/config.kdl".text = ''
+    // Niri Configuration - scrollable-tiling Wayland compositor
+    cursor { theme "Adwaita"; size 24; }
+    input { keyboard { xkb { layout "us"; }; repeat-delay 600; repeat-rate 25; }; touchpad { tap; tap-and-drag; middle-emulation; accel-speed 0.2; }; focus-follows-mouse { enable; }; }
+    output "eDP-1" { position x=0 y=0; scale 1.0; variable-refresh-rate; }
+    animations { workspace-switch { duration-ms 200; }; window-open { duration-ms 200; }; horizontal-window-move { duration-ms 200; }; vertical-window-move { duration-ms 200; }; }
+    layout { gaps 6; border { width 2; active-color "#00bcd4"; inactive-color "#404045"; }; padding 6; center-focused-column "never"; }
+    workspace-layout { default-column-width { proportion 0.5; }; }
+    workspace "1:emacs" {}
+    workspace "2:web" {}
+    workspace "3:term" {}
+    workspace "4:code" {}
+    workspace "5:docs" {}
+    workspace "6:media" {}
+    workspace "7:chat" {}
+    workspace "8:misc" {}
+    workspace "9:sys" {}
+    bind Super+E { spawn "emacsclient" "-c" "-a" "emacs"; }
+    bind Super+Shift+E { spawn "emacs"; }
+    bind Super+Ctrl+E { spawn "emacsclient" "-e" "(kill-emacs)" "||" "emacs" "--daemon"; }
+    bind Super+Return { spawn "foot"; }
+    bind Super+Shift+Return { spawn "emacsclient" "-c" "-e" "(vterm)"; }
+    bind Super+D { spawn "wofi" "--show" "drun"; }
+    bind Super+P { spawn "wofi" "--show" "run"; }
+    bind Super+X { spawn "emacsclient" "-c" "-e" "(call-interactively 'execute-extended-command)"; }
+    bind Super+Q { close-window; }
+    bind Super+O { focus-column-right; }
+    bind Super+Shift+O { focus-column-left; }
+    bind Super+J { focus-column-right; }
+    bind Super+K { focus-column-left; }
+    bind Super+H { focus-column-left; }
+    bind Super+L { focus-column-right; }
+    bind Super+Ctrl+Return { maximize-column; }
+    bind Super+Tab { focus-workspace-previous; }
+    bind Super+Minus { set-column-width "minus" 5%; }
+    bind Super+Plus { set-column-width "plus" 5%; }
+    bind Super+BracketLeft { set-column-width "minus" 5%; }
+    bind Super+BracketRight { set-column-width "plus" 5%; }
+    bind Super+F { set-window-fullscreen true; }
+    bind Super+Shift+F { toggle-window-floating; }
+    bind Super+M { maximize-column; }
+    bind Super+1 { focus-workspace "1:emacs"; }
+    bind Super+2 { focus-workspace "2:web"; }
+    bind Super+3 { focus-workspace "3:term"; }
+    bind Super+4 { focus-workspace "4:code"; }
+    bind Super+5 { focus-workspace "5:docs"; }
+    bind Super+6 { focus-workspace "6:media"; }
+    bind Super+7 { focus-workspace "7:chat"; }
+    bind Super+8 { focus-workspace "8:misc"; }
+    bind Super+9 { focus-workspace "9:sys"; }
+    bind Super+0 { focus-workspace-previous; }
+    bind Super+Shift+1 { move-column-to-workspace "1:emacs"; }
+    bind Super+Shift+2 { move-column-to-workspace "2:web"; }
+    bind Super+Shift+3 { move-column-to-workspace "3:term"; }
+    bind Super+Shift+4 { move-column-to-workspace "4:code"; }
+    bind Super+Shift+5 { move-column-to-workspace "5:docs"; }
+    bind Super+Shift+6 { move-column-to-workspace "6:media"; }
+    bind Super+Shift+7 { move-column-to-workspace "7:chat"; }
+    bind Super+Shift+8 { move-column-to-workspace "8:misc"; }
+    bind Super+Shift+9 { move-column-to-workspace "9:sys"; }
+    bind Super+Comma { focus-monitor-left; }
+    bind Super+Period { focus-monitor-right; }
+    bind Super+Shift+Comma { move-column-to-monitor-left; }
+    bind Super+Shift+Period { move-column-to-monitor-right; }
+    bind Super+Shift+Q { quit; }
+    bind Super+Shift+R { reload-config; }
+    bind Super+Ctrl+L { spawn "swaylock" "-f" "-c" "000000"; }
+    bind Super+B { spawn "emacsclient" "-c" "-e" "(call-interactively 'consult-buffer)"; }
+    bind Super+G { spawn "emacsclient" "-c" "-e" "(magit-status)"; }
+    bind Super+N { spawn "emacsclient" "-c" "-e" "(org-roam-node-find)"; }
+    bind Super+A { spawn "emacsclient" "-c" "-e" "(org-agenda)"; }
+    bind Super+S { spawn "emacsclient" "-c" "-e" "(consult-ripgrep)"; }
+    window-rule { match { app-id "emacs"; title "Emacs"; }; open-on-workspace "1:emacs"; }
+    window-rule { match { app-id "firefox"; }; open-on-workspace "2:web"; }
+    window-rule { match { app-id "chromium"; }; open-on-workspace "2:web"; }
+    window-rule { match { app-id "foot"; }; open-on-workspace "3:term"; }
+    window-rule { match { title "Open File"; }; floating true; }
+    window-rule { match { title "Save File"; }; floating true; }
+    window-rule { match { title "Preferences"; }; floating true; }
+    window-rule { match { title "*Completions*"; }; floating true; }
+    window-rule { match { title "*which-key*"; }; floating true; }
+    startup-command "sh" "-c" "waybar &"
+    startup-command "sh" "-c" "mako &"
+    startup-command "sh" "-c" "emacsclient -e '(message "Emacs ready")' || emacs --daemon &"
+    startup-command "sh" "-c" "sleep 1 && emacsclient -c &"
+  '';
+
+  home.file.".gitignore_global".text = ''
+    *.o *.a *.so *.dylib *.dll *.exe
+    build/ dist/ target/ out/
+    .vscode/ .idea/ .DS_Store *~ *.swp *.swo .emacs.d/ .netrwhist
+    .env .env.local .env.*.local
+    node_modules/ npm-debug.log yarn-error.log
+    __pycache__/ *.py[cod] *$py.class .venv/ venv/
+    Cargo.lock *.tmp *.bak .cache/
+  '';
+
+  # ============================================================================
+  # CONFIG DIRECTORIES
+  # ============================================================================
 
   # Create config directories
   home.file.".config/mako/.gitkeep".text = "";
