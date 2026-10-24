@@ -93,7 +93,7 @@ This hybrid approach gives you the reproducibility and declarative nature of fun
 
 6. **Complete Guix setup** (on first boot):
    ```bash
-   # Log in as user 'gux' with password 'o'
+   # Log in as user 'gux' (it has no default password; see Post-Installation)
    /root/guix-first-boot.sh
    ```
 
@@ -104,7 +104,7 @@ This hybrid approach gives you the reproducibility and declarative nature of fun
 
 ### Post-Installation (On First Boot)
 
-The system will auto-login to the user `gux` which has a default password of `o`. We recommend immediately changing this:
+The user `gux` has no default password. Set one before first boot, either declaratively in `configuration.nix` (`hashedPasswordFile` or `initialHashedPassword`) or from the installer with `sudo nixos-enter --root /mnt -- passwd gux`. To change it later:
 
 ```bash
 passwd

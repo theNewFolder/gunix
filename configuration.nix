@@ -164,7 +164,10 @@
     isNormalUser = true;
     extraGroups = [ "wheel" "video" "audio" "systemd-journal" ];
     shell = pkgs.zsh;
-    initialPassword = "o";
+    # No default password. Before first boot set one of:
+    #   hashedPasswordFile    - path to a file holding a `mkpasswd -m sha-512` hash
+    #   initialHashedPassword - such a hash, inline
+    # Without either the password stays locked; `nixos-enter --root /mnt -- passwd gux` also works.
   };
 
   security.sudo.wheelNeedsPassword = false;

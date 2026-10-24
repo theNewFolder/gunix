@@ -5,7 +5,7 @@ Follow these steps after the first boot to complete your system setup.
 ## 1. Login as gux
 
 - At the login prompt, enter the username: `gux`
-- Enter the password: `o`
+- Enter the password you set for `gux` (there is no default password)
 - You should now have access to the user account
 
 ## 2. Run guix pull
